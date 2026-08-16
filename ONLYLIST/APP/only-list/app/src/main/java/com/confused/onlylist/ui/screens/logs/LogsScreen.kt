@@ -157,8 +157,8 @@ private fun LogEntryRow(
             text = entry.message,
             style = typography.bodySmall.copy(color = colors.textPrimary, fontFamily = FontFamily.Monospace),
         )
-        if (entry.stackTrace != null) {
-            val trace = entry.stackTrace
+        val trace = entry.stackTrace
+        if (trace != null) {
             BasicText(
                 text = trace.take(200),
                 style = typography.bodySmall.copy(color = colors.error, fontFamily = FontFamily.Monospace),
