@@ -14,6 +14,7 @@ fun MediaEntity.toUiModel(): MockMedia = MockMedia(
     title = titleRomaji ?: titleEnglish ?: titleNative ?: "Unknown",
     titleEnglish = titleEnglish ?: titleRomaji ?: titleNative ?: "Unknown",
     coverColor = parseCoverColor(coverImageColor),
+    coverImageUrl = coverImageLarge,
     score = (averageScore ?: 0) / 10.0,
     episodes = episodes ?: 0,
     progress = 0,

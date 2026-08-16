@@ -10,13 +10,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.confused.onlylist.data.mock.MediaStatus
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.SegmentedControl
@@ -34,14 +35,19 @@ fun LibraryScreen(
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
+    val viewModel: LibraryViewModel = viewModel()
     var selectedSegment by remember { mutableIntStateOf(0) }
 
-    val allMedia = (MockData.currentlyWatching + MockData.completed + MockData.trending).distinctBy { it.id }
+    val library by viewModel.library.collectAsState()
+
+    // Use real AniList data if available, otherwise mock data
+    val displayMedia = if (library.isNotEmpty()) library else MockData.trending
+
     val filteredMedia = when (selectedSegment) {
-        0 -> allMedia.filter { it.status == MediaStatus.CURRENT }
-        1 -> allMedia.filter { it.status == MediaStatus.COMPLETED }
-        2 -> allMedia
-        else -> allMedia
+        0 -> displayMedia.filter { it.status.name in listOf("CURRENT", "AIRING") }
+        1 -> displayMedia.filter { it.status.name == "COMPLETED" }
+        2 -> displayMedia
+        else -> displayMedia
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -62,7 +68,7 @@ fun LibraryScreen(
             }
             item {
                 BasicText(
-                    text = "${filteredMedia.size} entries",
+                    text = "${filteredMedia.size} entries" + if (library.isNotEmpty()) " (live from AniList)" else " (mock data)",
                     style = typography.caption.copy(color = colors.textTertiary),
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                 )

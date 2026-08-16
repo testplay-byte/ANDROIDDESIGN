@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.SegmentedControl
@@ -42,16 +43,19 @@ fun SearchScreen(hazeState: HazeState) {
     val colors = LocalColors.current
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
+    val viewModel: SearchViewModel = viewModel()
     var selectedSegment by remember { mutableIntStateOf(0) }
-    var query by remember { mutableStateOf("") }
 
-    val results = if (query.isBlank()) {
-        MockData.trending + MockData.completed
+    val query by viewModel.query.collectAsState()
+    val results by viewModel.results.collectAsState()
+
+    // Use real AniList results if available, otherwise mock data
+    val displayResults = if (query.isNotBlank() && results.isNotEmpty()) {
+        results
+    } else if (query.isBlank()) {
+        MockData.trending + MockData.completed  // show trending when no query
     } else {
-        (MockData.trending + MockData.completed).filter {
-            it.title.contains(query, ignoreCase = true) ||
-            it.titleEnglish.contains(query, ignoreCase = true)
-        }
+        emptyList()
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -71,7 +75,7 @@ fun SearchScreen(hazeState: HazeState) {
                 ) {
                     BasicTextField(
                         value = query,
-                        onValueChange = { query = it },
+                        onValueChange = { viewModel.onQueryChange(it) },
                         singleLine = true,
                         textStyle = TextStyle(color = colors.textPrimary),
                         cursorBrush = SolidColor(colors.primary),
@@ -107,12 +111,12 @@ fun SearchScreen(hazeState: HazeState) {
             }
             item {
                 BasicText(
-                    text = "${results.size} results",
+                    text = "${displayResults.size} results" + if (query.isNotBlank()) " (live from AniList)" else "",
                     style = typography.caption.copy(color = colors.textTertiary),
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                 )
             }
-            val rowCount = (results.size + 1) / 2
+            val rowCount = (displayResults.size + 1) / 2
             for (rowIndex in 0 until rowCount) {
                 item {
                     Row(
@@ -123,10 +127,10 @@ fun SearchScreen(hazeState: HazeState) {
                     ) {
                         for (colIndex in 0..1) {
                             val index = rowIndex * 2 + colIndex
-                            if (index < results.size) {
+                            if (index < displayResults.size) {
                                 Box(Modifier.weight(1f)) {
                                     MediaCard(
-                                        media = results[index],
+                                        media = displayResults[index],
                                         onClick = { /* Phase 3: navigate to details */ },
                                     )
                                 }
