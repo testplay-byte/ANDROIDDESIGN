@@ -70,6 +70,21 @@ object AniListQueries {
                 bannerImage
                 options { displayAdultContent }
                 mediaListOptions { scoreFormat }
+                statistics {
+                    anime {
+                        count
+                        episodesWatched
+                        minutesWatched
+                        meanScore
+                        standardDeviation
+                    }
+                    manga {
+                        count
+                        chaptersRead
+                        volumesRead
+                        meanScore
+                    }
+                }
             }
         }
     """.trimIndent()

@@ -1,5 +1,6 @@
 package com.confused.onlylist.network.anilist
 
+import com.confused.onlylist.common.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
@@ -82,6 +83,8 @@ class AniListGraphQLClient(
                 }
             }
 
+            Logger.d("AniList", "GraphQL query: ${query.take(60).replace("\n", " ")}...")
+
             val response: JsonObject = client.post {
                 if (token != null) {
                     header("Authorization", "Bearer $token")
@@ -91,11 +94,14 @@ class AniListGraphQLClient(
 
             // Check for GraphQL errors
             if (response.containsKey("errors")) {
-                Result.failure(GraphQLException(response["errors"].toString()))
+                val errors = response["errors"].toString()
+                Logger.w("AniList", "GraphQL errors: $errors")
+                Result.failure(GraphQLException(errors))
             } else {
                 Result.success(response["data"]?.jsonObject ?: JsonObject(emptyMap()))
             }
         } catch (e: Exception) {
+            Logger.w("AniList", "GraphQL request failed: ${e.message}")
             Result.failure(e)
         }
     }

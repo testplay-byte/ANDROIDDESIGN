@@ -18,6 +18,7 @@ import com.confused.onlylist.ui.screens.airing.AiringScreen
 import com.confused.onlylist.ui.screens.details.DetailsScreen
 import com.confused.onlylist.ui.screens.home.HomeScreen
 import com.confused.onlylist.ui.screens.library.LibraryScreen
+import com.confused.onlylist.ui.screens.logs.LogsScreen
 import com.confused.onlylist.ui.screens.profile.ProfileScreen
 import com.confused.onlylist.ui.screens.search.SearchScreen
 import com.confused.onlylist.ui.screens.settings.SettingsScreen
@@ -77,10 +78,14 @@ fun AppNavHost() {
                 SettingsScreen(
                     hazeState = sharedHazeState,
                     onNavigateToProfile = { navController.navigate(Destinations.PROFILE) },
+                    onNavigateToLogs = { navController.navigate(Destinations.LOGS) },
                 )
             }
             composable(Destinations.PROFILE) {
                 ProfileScreen(hazeState = sharedHazeState)
+            }
+            composable(Destinations.LOGS) {
+                LogsScreen(hazeState = sharedHazeState)
             }
             composable(
                 route = Destinations.DETAILS,

@@ -32,6 +32,7 @@ import dev.chrisbanes.haze.haze
 fun SettingsScreen(
     hazeState: HazeState,
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToLogs: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
@@ -53,6 +54,7 @@ fun SettingsScreen(
         SettingsSection("Data", listOf(
             SettingItem("Backup & Restore", "Not configured", "backup"),
             SettingItem("Cache", "Auto-managed", "cache"),
+            SettingItem("Logs", "View recent app logs", "logs"),
         )),
         SettingsSection("Agent", listOf(
             SettingItem("AI Design Agent", "Coming in Phase 4", "agent"),
@@ -92,6 +94,7 @@ fun SettingsScreen(
                                         when (item.key) {
                                             "account" -> if (!isLoggedIn) MainActivity.startAniListAuth(context)
                                             "profile" -> onNavigateToProfile()
+                                            "logs" -> onNavigateToLogs()
                                         }
                                     }
                                     .padding(vertical = 8.dp),
