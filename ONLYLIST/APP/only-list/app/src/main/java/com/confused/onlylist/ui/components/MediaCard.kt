@@ -1,13 +1,17 @@
 package com.confused.onlylist.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,18 +20,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.confused.onlylist.data.mock.MediaStatus
 import com.confused.onlylist.data.mock.MockMedia
 import com.confused.onlylist.designsystem.components.pressScale
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
+import com.confused.onlylist.designsystem.theme.OnlyListColors
 
 /**
- * MediaCard — grid card showing cover image + title + score.
- * Uses Coil AsyncImage for real cover images (falls back to color gradient).
+ * MediaCard — modern overlay design (R-13).
+ * Title + score overlaid ON the cover via a bottom gradient scrim.
+ * Score badge top-right (black pill + ★). Status badge top-left.
  */
 @Composable
 fun MediaCard(
@@ -39,78 +48,99 @@ fun MediaCard(
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
 
-    Column(
+    Box(
         modifier = modifier
-            .pressScale(onClick = onClick)
-            .clip(shapes.large),
+            .aspectRatio(2f / 3f)
+            .clip(shapes.large)
+            .pressScale(pressedScale = 0.96f, onClick = onClick),
     ) {
-        // Cover image — uses Coil to load the real AniList cover URL.
-        // Falls back to the media's cover color gradient if the URL is null/empty.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (!media.coverImageUrl.isNullOrEmpty()) {
-                AsyncImage(
-                    model = media.coverImageUrl,
-                    contentDescription = media.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                // Color gradient fallback
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    media.coverColor,
-                                    media.coverColor.copy(alpha = 0.6f),
-                                )
-                            )
-                        ),
-                )
-            }
-
-            // Score badge (top-right)
+        // 1. Cover image — full bleed (or gradient fallback)
+        if (!media.coverImageUrl.isNullOrEmpty()) {
+            AsyncImage(
+                model = media.coverImageUrl,
+                contentDescription = media.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
             Box(
                 Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .clip(shapes.small)
-                    .background(colors.background.copy(alpha = 0.7f))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                BasicText(
-                    text = media.score.toString(),
-                    style = typography.caption.copy(color = colors.primary),
-                )
-            }
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                media.coverColor,
+                                media.coverColor.copy(alpha = 0.4f),
+                            )
+                        )
+                    ),
+            )
         }
 
-        // Title + subtitle
-        Column(Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)) {
+        // 2. Bottom gradient scrim for title readability (transparent → black 70%)
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.7f),
+                        )
+                    )
+                )
+        )
+
+        // 3. Title overlaid on cover (bottom)
+        Column(
+            Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(8.dp),
+        ) {
             BasicText(
                 text = media.title,
-                style = typography.bodySmall.copy(color = colors.textPrimary),
+                style = typography.bodySmall.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             BasicText(
                 text = "${media.format} · ${media.year}",
-                style = typography.caption.copy(color = colors.textTertiary),
+                style = typography.caption.copy(color = Color.White.copy(alpha = 0.7f)),
                 maxLines = 1,
+            )
+        }
+
+        // 4. Score badge (top-right) — black pill + ★
+        Row(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(6.dp)
+                .clip(shapes.small)
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                text = "★",
+                style = typography.caption.copy(color = colors.warning),
+            )
+            BasicText(
+                text = media.score.toString(),
+                style = typography.caption.copy(color = Color.White),
             )
         }
     }
 }
 
 /**
- * MediaListItem — horizontal row: cover + title + status + progress + score.
+ * MediaListItem — modern list row with cover + info + status.
  */
 @Composable
 fun MediaListItem(
@@ -122,15 +152,15 @@ fun MediaListItem(
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
 
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .pressScale(onClick = onClick)
+            .pressScale(pressedScale = 0.97f, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Cover thumbnail
+        // Cover thumbnail (rounded)
         Box(
             Modifier
                 .size(56.dp, 80.dp)
@@ -148,7 +178,7 @@ fun MediaListItem(
                     Modifier
                         .fillMaxSize()
                         .background(
-                            brush = Brush.verticalGradient(
+                            Brush.verticalGradient(
                                 colors = listOf(media.coverColor, media.coverColor.copy(alpha = 0.6f))
                             )
                         ),
@@ -156,9 +186,10 @@ fun MediaListItem(
             }
         }
 
+        // Info
         Column(
             Modifier.weight(1f),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             BasicText(
                 text = media.title,
@@ -166,8 +197,8 @@ fun MediaListItem(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            androidx.compose.foundation.layout.Row(
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 StatusDot(media.status, colors)
@@ -184,6 +215,7 @@ fun MediaListItem(
             }
         }
 
+        // Score
         BasicText(
             text = media.score.toString(),
             style = typography.numberMedium.copy(color = colors.textSecondary),
@@ -192,20 +224,20 @@ fun MediaListItem(
 }
 
 @Composable
-private fun StatusDot(status: com.confused.onlylist.data.mock.MediaStatus, colors: com.confused.onlylist.designsystem.theme.OnlyListColors) {
+private fun StatusDot(status: MediaStatus, colors: OnlyListColors) {
     val color = when (status) {
-        com.confused.onlylist.data.mock.MediaStatus.CURRENT -> colors.primary
-        com.confused.onlylist.data.mock.MediaStatus.COMPLETED -> colors.success
-        com.confused.onlylist.data.mock.MediaStatus.PAUSED -> colors.warning
-        com.confused.onlylist.data.mock.MediaStatus.PLANNING -> colors.info
-        com.confused.onlylist.data.mock.MediaStatus.DROPPED -> colors.error
-        com.confused.onlylist.data.mock.MediaStatus.REPEATING -> Color(0xFFBB6BD9)
-        com.confused.onlylist.data.mock.MediaStatus.AIRING -> colors.primary
+        MediaStatus.CURRENT -> colors.primary
+        MediaStatus.COMPLETED -> colors.success
+        MediaStatus.PAUSED -> colors.warning
+        MediaStatus.PLANNING -> colors.info
+        MediaStatus.DROPPED -> colors.error
+        MediaStatus.REPEATING -> Color(0xFFBB6BD9)
+        MediaStatus.AIRING -> colors.primary
     }
     Box(
         Modifier
             .size(8.dp)
-            .clip(androidx.compose.foundation.shape.CircleShape)
+            .clip(CircleShape)
             .background(color),
     )
 }

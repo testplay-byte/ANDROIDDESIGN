@@ -23,7 +23,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -36,8 +35,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeChild
 
-// ── Bottom navigation bar — floating pill + TRUE frosted glass + animated label reveal ──
-// Per DESIGN-LANGUAGE.md §7.1 (updated per R-9: Haze replaces alpha+shadow).
+// ── Bottom navigation bar — floating pill + TRUE frosted glass (R-13 fix) ──
 
 @Stable
 data class BottomNavItem(
@@ -47,13 +45,16 @@ data class BottomNavItem(
 )
 
 /**
- * Floating pill bottom navigation with TRUE frosted glass backdrop blur.
- * - Haze provides real blur of content BEHIND the bar (not just alpha overlay).
- * - No shadow (was the cause of the "line" artifact).
- * - Animated label reveal on selection (expandHorizontally + fadeIn).
- * - pressScale feedback (scale 0.95, no ripple).
+ * Floating pill bottom navigation with TRUE frosted glass.
  *
- * @param hazeState shared with the host screen's LazyColumn (the blur source).
+ * R-13 FIXES:
+ * 1. backgroundColor = colors.surface (OPAQUE, not Transparent) — fixes
+ *    "only images frosted, not text" bug. Haze needs an opaque backing for
+ *    the blur kernel to smear text pixels.
+ * 2. Every item gets weight(1f) — no tap-through gaps between buttons.
+ * 3. pressScale applied BEFORE visual modifiers — full slot is tappable.
+ * 4. No spacedBy — items butt against each other.
+ * 5. blurRadius = 28.dp for a light frosted feel.
  */
 @Composable
 fun OnlyListBottomBar(
@@ -80,26 +81,27 @@ fun OnlyListBottomBar(
                 .hazeChild(
                     state = hazeState,
                     style = HazeStyle(
-                        // Haze 1.1.1 API: backgroundColor is required (defaults to Unspecified → crash).
-                        // Color.Transparent = the blur samples content behind; at edges falls back to transparent.
-                        backgroundColor = Color.Transparent,
-                        blurRadius = 24.dp,
-                        tints = listOf(HazeTint(colors.surface.copy(alpha = 0.55f))),
+                        // R-13 FIX: OPAQUE backing (was Color.Transparent) —
+                        // fixes text not being frosted.
+                        backgroundColor = colors.surface,
+                        blurRadius = 28.dp,
+                        tints = listOf(HazeTint(colors.surface.copy(alpha = 0.6f))),
                     ),
                 )
                 .height(58.dp)
                 .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            // R-13 FIX: no spacedBy — items butt against each other (no tap-through gaps)
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEach { item ->
                 val isActive = currentRoute == item.route
-                val itemModifier = if (isActive) Modifier else Modifier.weight(1f)
+                // R-13 FIX: every item gets weight(1f) — equal slot, no gaps
                 BottomNavItemView(
                     item = item,
                     isActive = isActive,
                     onClick = { onNavigate(item.route) },
-                    modifier = itemModifier,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -118,55 +120,57 @@ private fun RowScope.BottomNavItemView(
     val typography = LocalTypography.current
     val motion = LocalMotion.current
 
-    Row(
+    Box(
         modifier = modifier
             .height(42.dp)
+            // R-13 FIX: pressScale FIRST (outermost) → full slot is tappable
+            .pressScale(pressedScale = 0.95f, onClick = onClick)
+            // Visual styling AFTER clickable
             .then(
                 if (isActive) {
                     Modifier
                         .clip(shapes.pill)
                         .background(colors.primaryMuted.copy(alpha = 0.8f))
-                        .padding(horizontal = 14.dp)
                 } else {
-                    Modifier.padding(horizontal = 10.dp)
+                    Modifier
                 }
-            )
-            .pressScale(
-                pressedScale = 0.95f,
-                onClick = onClick,
             ),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
-        Image(
-            painter = painterResource(item.iconRes),
-            contentDescription = item.label,
-            colorFilter = ColorFilter.tint(
-                if (isActive) colors.primary else colors.textTertiary
-            ),
-            modifier = Modifier.size(22.dp),
-        )
-        AnimatedVisibility(
-            visible = isActive,
-            enter = expandHorizontally(
-                animationSpec = tween(motion.shortMs),
-                expandFrom = Alignment.Start,
-            ) + fadeIn(animationSpec = tween(motion.quickMs)),
-            exit = fadeOut(animationSpec = tween(100)) +
-                    shrinkHorizontally(animationSpec = tween(150)),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = if (isActive) 14.dp else 10.dp),
         ) {
-            BasicText(
-                text = item.label,
-                style = typography.titleMedium.copy(
-                    color = if (isActive) colors.primary else colors.textTertiary
+            Image(
+                painter = painterResource(item.iconRes),
+                contentDescription = item.label,
+                colorFilter = ColorFilter.tint(
+                    if (isActive) colors.primary else colors.textTertiary
                 ),
-                maxLines = 1,
+                modifier = Modifier.size(22.dp),
             )
+            AnimatedVisibility(
+                visible = isActive,
+                enter = expandHorizontally(
+                    animationSpec = tween(motion.shortMs),
+                    expandFrom = Alignment.Start,
+                ) + fadeIn(animationSpec = tween(motion.quickMs)),
+                exit = fadeOut(animationSpec = tween(100)) +
+                        shrinkHorizontally(animationSpec = tween(150)),
+            ) {
+                BasicText(
+                    text = item.label,
+                    style = typography.titleMedium.copy(
+                        color = if (isActive) colors.primary else colors.textTertiary
+                    ),
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
 
-// ── Default items ──
 @Composable
 private fun defaultBottomNavItems(): List<BottomNavItem> = listOf(
     BottomNavItem("home", com.confused.onlylist.designsystem.R.drawable.ic_home, "Home"),

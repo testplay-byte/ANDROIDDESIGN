@@ -18,25 +18,18 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
+import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeChild
 
-// ── Collapsible header per user spec ──
+// ── Collapsible header with PROGRESSIVE gradient blur (R-13 fix) ──
 //
-// R-12 FIX: the previous version had an inner scrim Box with Modifier.fillMaxSize()
-// inside a wrap-content parent Box. fillMaxSize() caused the parent to EXPAND to
-// full screen height → the opaque .background() + hazeChild covered the whole
-// screen, blurring/darkening everything.
-//
-// FIX (Option A per R-12): apply hazeChild DIRECTLY to the outer Box. No inner
-// scrim Box. No opaque .background(). The HazeStyle.backgroundColor provides
-// the visual backing (drawn inside the hazeChild's clipped layer, behind the
-// blurred pixels). The outer Box wraps to the title's height (no fillMaxSize).
-//
-// Title: 45sp → 24sp lerp on scroll. Weight STAYS Bold (no flicker).
-// Scrim: 0 → 0.7 alpha (reduced from 0.85 — was too dark) on 200dp scroll.
+// R-13 FIX: added HazeProgressive.verticalGradient for a gradient blur edge
+// at the bottom of the header (full frost at top → no blur at bottom).
+// This is a REAL progressive blur (not a color scrim) — the iOS-style
+// backdrop-filter gradient.
 
 @Composable
 fun CollapsibleHeader(
@@ -74,15 +67,9 @@ fun CollapsibleHeader(
     val topPad = lerp(8.dp, 2.dp, animatedFraction)
     val bottomPad = lerp(4.dp, 0.dp, animatedFraction)
 
-    // Scrim alpha: 0 → 0.7. Reduced from 0.85 (was too dark per user feedback).
+    // Scrim alpha: 0 → 0.7 (reduced from 0.85 — was too dark).
     val scrimAlpha = animatedFraction * 0.7f
 
-    // R-12 FIX: apply hazeChild DIRECTLY to the outer Box.
-    // No inner scrim Box, no opaque .background().
-    // The HazeStyle.backgroundColor = colors.background provides the visual backing
-    // (drawn behind the blurred pixels, inside the hazeChild's clipped region).
-    // The outer Box wraps to the title's measured height (no fillMaxSize) — so the
-    // blur only covers the header area, NOT the whole screen.
     Box(
         modifier
             .fillMaxWidth()
@@ -90,10 +77,17 @@ fun CollapsibleHeader(
                 state = hazeState,
                 style = HazeStyle(
                     backgroundColor = colors.background,
-                    blurRadius = 24.dp,
+                    blurRadius = 28.dp,
                     tints = listOf(HazeTint(colors.surface.copy(alpha = scrimAlpha))),
                 ),
-            )
+            ) {
+                // R-13: PROGRESSIVE gradient blur — full frost at top → no blur at bottom edge.
+                // This creates the "gradient blur effect at the bottom" the user wants.
+                progressive = HazeProgressive.verticalGradient(
+                    startIntensity = 1f,        // top of header = full blur
+                    endIntensity = 0f,          // bottom edge of header = no blur
+                )
+            }
             .statusBarsPadding()
     ) {
         BasicText(
