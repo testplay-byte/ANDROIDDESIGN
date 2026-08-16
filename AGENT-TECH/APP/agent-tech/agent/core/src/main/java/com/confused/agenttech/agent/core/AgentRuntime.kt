@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -86,7 +87,7 @@ class AgentRuntime(
         Logger.i("Agent", "▶ run start (maxIter=$maxIterations)")
 
         try {
-            while (isActive && iteration < maxIterations) {
+            while (coroutineContext.isActive && iteration < maxIterations) {
                 iteration++
                 Logger.d("Agent", "iteration $iteration / $maxIterations")
 
