@@ -23,6 +23,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -79,8 +80,11 @@ fun OnlyListBottomBar(
                 .hazeChild(
                     state = hazeState,
                     style = HazeStyle(
-                        tint = HazeTint(colors.surface.copy(alpha = 0.55f)),
+                        // Haze 1.1.1 API: backgroundColor is required (defaults to Unspecified → crash).
+                        // Color.Transparent = the blur samples content behind; at edges falls back to transparent.
+                        backgroundColor = Color.Transparent,
                         blurRadius = 24.dp,
+                        tints = listOf(HazeTint(colors.surface.copy(alpha = 0.55f))),
                     ),
                 )
                 .height(58.dp)

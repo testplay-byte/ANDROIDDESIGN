@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.lerp
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.designsystem.theme.LocalColors
@@ -79,8 +80,11 @@ fun CollapsibleHeader(
                 .hazeChild(
                     state = hazeState,
                     style = HazeStyle(
-                        tint = HazeTint(colors.surface.copy(alpha = scrimAlpha)),
+                        // Haze 1.1.1 API: backgroundColor is required.
+                        // Color.Transparent so at scroll=0 (scrimAlpha=0) the content shows through.
+                        backgroundColor = Color.Transparent,
                         blurRadius = 20.dp,
+                        tints = listOf(HazeTint(colors.surface.copy(alpha = scrimAlpha))),
                     ),
                 )
         )
