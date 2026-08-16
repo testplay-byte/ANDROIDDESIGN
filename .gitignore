@@ -1,0 +1,77 @@
+# ===== ANDROIDDESIGN .gitignore =====
+# This .gitignore is at the repo root. It protects:
+#   1. The local credentials folder (NEVER committed).
+#   2. Standard Android/Gradle build artifacts.
+#   3. IDE files.
+#   4. Local properties (SDK paths, API keys — never committed).
+
+# --- Credentials / secrets (CRITICAL — never commit) ---
+credentials/
+**/credentials/
+**/.git-credentials
+**/.env
+**/.env.*
+**/secrets.*
+**/local.properties
+**/api-keys.json
+
+# The credentials folder lives OUTSIDE the repo tree, but if anyone ever
+# accidentally creates one inside, this rule catches it.
+
+# --- Android / Gradle ---
+**/build/
+**/.gradle/
+**/captures/
+**/.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.jar
+!gradle-wrapper.jar
+*.war
+*.ear
+*.native.gz
+
+# Android-specific local files
+**/local.properties
+**/.idea/
+**/.DS_Store
+**/Thumbs.db
+
+# Kotlin / Java
+*.kotlin_metadata
+*.hprof
+
+# --- NPM / Node (for any future web tooling) ---
+node_modules/
+dist/
+.next/
+.cache/
+
+# --- Editor files ---
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+dev.log
+
+# --- Backup files (the app's runtime backups live on-device, NOT in repo) ---
+*.backup
+*.bak
+backups/
+
+# --- Cline vendored clone (if ever placed inside repo — prefer submodule) ---
+REFERENCES/cline/
+
+# --- Agent sandbox workspace (this lives outside the repo, but guard anyway) ---
+android-project/
