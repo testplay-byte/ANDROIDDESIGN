@@ -58,4 +58,12 @@
 (see `lessons-learned.md` — 19 entries seeded)
 
 ### Push status
-- (to be filled when the GitHub push completes)
+- ✅ Committed as `3106091` ("docs(phase-0): planning, research, refined CORE_RULES, architecture, open-questions").
+- ✅ Pushed to `main` at `testplay-byte/ANDROIDDESIGN`.
+- ✅ Secret scan: 0 occurrences of the actual GitHub PAT in the commit. (The "client_secret"/"api_key" hits in the pre-commit scan were documentation mentions, not secret values.)
+- ✅ Repo structure: 23 files, ~512KB, single wrapper folder `ANDROIDDESIGN/` at repo root, `.github/workflows/` at repo root (GitHub constraint).
+
+### Cline full-source clone
+- Attempted a shallow clone into `references/cline/` (local sandbox only). Stalled at 116KB (large repo + sandbox network limits).
+- Cleaned up. Deferred to the porting phase (Phase 4) — at that point we'll either re-clone or add Cline as a git submodule in `REFERENCES/cline/`.
+- The R-1 research report (64KB, 1310 lines) is the distilled analysis and is sufficient for planning.
