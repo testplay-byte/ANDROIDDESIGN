@@ -36,11 +36,14 @@ fun SettingsScreen(
 ) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
+    val shapes = LocalShapes.current
     val typography = LocalTypography.current
     val context = LocalContext.current
 
+    // R-13: observe auth state so UI updates when user links account
     val isLoggedIn = AppContainer.authManager.isLoggedIn
-    val accountStatus = if (isLoggedIn) "Linked" else "Not linked — tap to connect"
+    val accountStatus = if (isLoggedIn) "✓ Linked — tap to view profile" else "Not linked — tap to connect"
+    val accountSubtitleColor = if (isLoggedIn) colors.success else colors.textTertiary
 
     val sections = listOf(
         SettingsSection("Account", listOf(
@@ -106,9 +109,10 @@ fun SettingsScreen(
                                         text = item.title,
                                         style = typography.titleMedium.copy(color = colors.textPrimary),
                                     )
+                                    val subtitleColor = if (item.key == "account") accountSubtitleColor else colors.textTertiary
                                     BasicText(
                                         text = item.subtitle,
-                                        style = typography.bodySmall.copy(color = colors.textTertiary),
+                                        style = typography.bodySmall.copy(color = subtitleColor),
                                     )
                                 }
                                 BasicText(

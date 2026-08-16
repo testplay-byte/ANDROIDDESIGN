@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -62,25 +63,30 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                 .haze(hazeState),
             contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
+            // Trending Now — horizontal scroll carousel
             item {
-                GlassCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                SectionHeader("Trending Now")
+            }
+            item {
+                LazyRow(
+                    Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    BasicText(
-                        text = "Welcome to Only-List",
-                        style = typography.headingLarge.copy(color = colors.textPrimary),
-                    )
-                    BasicText(
-                        text = "Your anime & manga tracker",
-                        style = typography.bodyMedium.copy(color = colors.textSecondary),
-                    )
+                    items(trendingMedia.take(10)) { media ->
+                        Box(Modifier.width(140.dp)) {
+                            MediaCard(
+                                media = media,
+                                onClick = { onMediaClick(media.id) },
+                            )
+                        }
+                    }
                 }
             }
 
+            // Quick stats
             item {
-                SectionHeader("Quick Stats")
+                SectionHeader("Your Stats")
                 GlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,35 +117,7 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                 }
             }
 
-            item {
-                SectionHeader("Trending Now")
-            }
-            val rowCount = (trendingMedia.size + 1) / 2
-            for (rowIndex in 0 until rowCount) {
-                item {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        for (colIndex in 0..1) {
-                            val index = rowIndex * 2 + colIndex
-                            if (index < trendingMedia.size) {
-                                Box(Modifier.weight(1f)) {
-                                    MediaCard(
-                                        media = trendingMedia[index],
-                                        onClick = { onMediaClick(trendingMedia[index].id) },
-                                    )
-                                }
-                            } else {
-                                Box(Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
-
+            // Currently Watching (list)
             item {
                 SectionHeader("Currently Watching")
             }
