@@ -5,13 +5,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -27,13 +28,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.confused.onlylist.data.mock.MockData
+import com.confused.onlylist.AppContainer
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.SegmentedControl
+import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaCard
+import com.confused.onlylist.ui.components.toUiModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
@@ -48,14 +51,23 @@ fun SearchScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
 
     val query by viewModel.query.collectAsState()
     val results by viewModel.results.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-    // Use real AniList results if available, otherwise mock data
-    val displayResults = if (query.isNotBlank() && results.isNotEmpty()) {
-        results
-    } else if (query.isBlank()) {
-        MockData.trending + MockData.completed  // show trending when no query
-    } else {
-        emptyList()
+    // When no query: show real trending from AniList (not mock data)
+    val trending by AppContainer.mediaRepository.getTrending().collectAsState(initial = emptyList())
+    val trendingMedia = trending.map { it.toUiModel() }
+
+    val displayResults = when {
+        query.isNotBlank() && results.isNotEmpty() -> results
+        query.isBlank() && trendingMedia.isNotEmpty() -> trendingMedia
+        else -> emptyList()
+    }
+    val isLoading = isRefreshing && displayResults.isEmpty()
+    val statusText = when {
+        query.isNotBlank() -> "${results.size} results (live from AniList)"
+        trendingMedia.isNotEmpty() -> "${trendingMedia.size} trending (live from AniList)"
+        isLoading -> "Loading from AniList..."
+        else -> "No results"
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -111,33 +123,73 @@ fun SearchScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
             }
             item {
                 BasicText(
-                    text = "${displayResults.size} results" + if (query.isNotBlank()) " (live from AniList)" else "",
+                    text = statusText,
                     style = typography.caption.copy(color = colors.textTertiary),
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                 )
             }
-            val rowCount = (displayResults.size + 1) / 2
-            for (rowIndex in 0 until rowCount) {
-                item {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        for (colIndex in 0..1) {
-                            val index = rowIndex * 2 + colIndex
-                            if (index < displayResults.size) {
+
+            if (isLoading) {
+                // Skeleton loading
+                val rowCount = 3
+                for (rowIndex in 0 until rowCount) {
+                    item {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            for (colIndex in 0..1) {
                                 Box(Modifier.weight(1f)) {
-                                    MediaCard(
-                                        media = displayResults[index],
-                                        onClick = { onMediaClick(displayResults[index].id) },
+                                    SkeletonBox(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(2f / 3f),
                                     )
                                 }
-                            } else {
-                                Box(Modifier.weight(1f))
                             }
                         }
+                    }
+                }
+            } else if (displayResults.isNotEmpty()) {
+                val rowCount = (displayResults.size + 1) / 2
+                for (rowIndex in 0 until rowCount) {
+                    item(key = "row-$rowIndex") {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            for (colIndex in 0..1) {
+                                val index = rowIndex * 2 + colIndex
+                                if (index < displayResults.size) {
+                                    Box(Modifier.weight(1f)) {
+                                        MediaCard(
+                                            media = displayResults[index],
+                                            onClick = { onMediaClick(displayResults[index].id) },
+                                        )
+                                    }
+                                } else {
+                                    Box(Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                item {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicText(
+                            text = "No results. Try searching for an anime title.",
+                            style = typography.bodyMedium.copy(color = colors.textTertiary),
+                        )
                     }
                 }
             }

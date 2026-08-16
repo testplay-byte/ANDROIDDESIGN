@@ -2,7 +2,6 @@ package com.confused.onlylist.ui.screens.airing
 
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +13,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
+import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaListItem
@@ -34,9 +34,9 @@ fun AiringScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
     val viewModel: AiringViewModel = viewModel()
 
     val airing by viewModel.airing.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-    // Use real AniList airing data if available, otherwise mock data
-    val displayAiring = if (airing.isNotEmpty()) airing else MockData.airingThisWeek
+    val isLoading = isRefreshing && airing.isEmpty()
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -46,7 +46,7 @@ fun AiringScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
         ) {
             // Next airing highlight card
             item {
-                val next = displayAiring.firstOrNull { it.nextAiringAt != null } ?: displayAiring.firstOrNull()
+                val next = airing.firstOrNull { it.nextAiringAt != null } ?: airing.firstOrNull()
                 if (next != null) {
                     GlassCard(
                         modifier = Modifier
@@ -67,17 +67,57 @@ fun AiringScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                             style = typography.bodyMedium.copy(color = colors.primary),
                         )
                     }
+                } else if (isLoading) {
+                    GlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        SkeletonBox(
+                            modifier = Modifier.fillMaxWidth().height(60.dp),
+                        )
+                    }
                 }
             }
 
             item {
-                SectionHeader("Airing This Week" + if (airing.isNotEmpty()) " (live)" else "")
+                val headerText = when {
+                    isLoading -> "Loading from AniList..."
+                    airing.isNotEmpty() -> "Airing This Week (live)"
+                    else -> "Airing This Week"
+                }
+                SectionHeader(headerText)
             }
-            items(displayAiring) { media ->
-                MediaListItem(
-                    media = media,
-                    onClick = { onMediaClick(media.id) },
-                )
+
+            if (isLoading) {
+                items(5) {
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
+            } else if (airing.isNotEmpty()) {
+                items(airing, key = { it.id }) { media ->
+                    MediaListItem(
+                        media = media,
+                        onClick = { onMediaClick(media.id) },
+                    )
+                }
+            } else {
+                item {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicText(
+                            text = "No airing anime found. Pull to refresh.",
+                            style = typography.bodyMedium.copy(color = colors.textTertiary),
+                        )
+                    }
+                }
             }
         }
         CollapsibleHeader(title = "Airing", listState = listState, hazeState = hazeState)

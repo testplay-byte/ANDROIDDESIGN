@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,17 +19,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.AppContainer
 import com.confused.onlylist.common.Logger
-import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
+import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaCard
-import com.confused.onlylist.ui.components.MediaListItem
 import com.confused.onlylist.ui.components.toUiModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -40,6 +43,7 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
     val typography = LocalTypography.current
 
     val trending by AppContainer.mediaRepository.getTrending().collectAsState(initial = emptyList())
+    var isRefreshing by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         Logger.d("Home", "Refreshing trending from AniList...")
@@ -48,13 +52,11 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
             onSuccess = { Logger.d("Home", "Trending refresh OK — ${trending.size} cached") },
             onFailure = { Logger.w("Home", "Trending refresh failed: ${it.message}") },
         )
+        isRefreshing = false
     }
 
-    val trendingMedia = if (trending.isNotEmpty()) {
-        trending.map { it.toUiModel() }
-    } else {
-        MockData.trending
-    }
+    val trendingMedia = trending.map { it.toUiModel() }
+    val isLoading = isRefreshing && trendingMedia.isEmpty()
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -69,18 +71,50 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                 SectionHeader("Trending Now")
             }
             item {
-                LazyRow(
-                    Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    items(trendingMedia.take(10)) { media ->
-                        Box(Modifier.width(140.dp)) {
-                            MediaCard(
-                                media = media,
-                                onClick = { onMediaClick(media.id) },
-                            )
+                if (isLoading) {
+                    // Skeleton loading state
+                    LazyRow(
+                        Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(5) {
+                            Box(Modifier.width(140.dp)) {
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(2f / 3f),
+                                )
+                            }
                         }
+                    }
+                } else if (trendingMedia.isNotEmpty()) {
+                    LazyRow(
+                        Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(trendingMedia.take(10), key = { it.id }) { media ->
+                            Box(Modifier.width(140.dp)) {
+                                MediaCard(
+                                    media = media,
+                                    onClick = { onMediaClick(media.id) },
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Empty/error state — no mock data
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                    ) {
+                        BasicText(
+                            text = "Failed to load trending. Check your connection.",
+                            style = typography.bodyMedium.copy(color = colors.textTertiary),
+                        )
                     }
                 }
             }
@@ -95,8 +129,7 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                 ) {
                     val stats = listOf(
                         "Trending" to trendingMedia.size.toString(),
-                        "Watching" to MockData.currentlyWatching.size.toString(),
-                        "Completed" to MockData.completed.size.toString(),
+                        "Status" to if (isLoading) "Loading..." else "Ready",
                     )
                     Row(
                         Modifier.fillMaxWidth(),
@@ -116,17 +149,6 @@ fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
                         }
                     }
                 }
-            }
-
-            // Currently Watching (list)
-            item {
-                SectionHeader("Currently Watching")
-            }
-            items(MockData.currentlyWatching) { media ->
-                MediaListItem(
-                    media = media,
-                    onClick = { onMediaClick(media.id) },
-                )
             }
         }
         CollapsibleHeader(title = "Home", listState = listState, hazeState = hazeState)

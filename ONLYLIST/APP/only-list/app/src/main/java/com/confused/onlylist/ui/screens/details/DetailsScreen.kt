@@ -75,68 +75,83 @@ fun DetailsScreen(
     val media by viewModel.media.collectAsState()
     val episodes by viewModel.episodes.collectAsState()
 
-    val displayMedia = media ?: MockData.trending.find { it.id == mediaId } ?: MockData.trending.first()
+    // Show loading state if media not loaded yet (no mock fallback)
+    val displayMedia = media
+    val isLoading = displayMedia == null
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize().haze(hazeState),
-            contentPadding = PaddingValues(bottom = 32.dp),
-        ) {
-            // 1. Parallax banner with blur-on-collapse
-            item {
-                BannerSection(media = displayMedia, listState = listState)
+        if (isLoading) {
+            // Loading state — no mock data
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText(
+                    text = "Loading details...",
+                    style = typography.bodyMedium.copy(color = colors.textTertiary),
+                )
             }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize().haze(hazeState),
+                contentPadding = PaddingValues(bottom = 32.dp),
+            ) {
+                // 1. Parallax banner with blur-on-collapse
+                item {
+                    BannerSection(media = displayMedia!!, listState = listState)
+                }
 
-            // 2. Title block — cover thumbnail + title + metadata
-            item {
-                TitleBlock(media = displayMedia)
-            }
+                // 2. Title block — cover thumbnail + title + metadata
+                item {
+                    TitleBlock(media = displayMedia!!)
+                }
 
-            // 3. Genre chips (horizontal scroll)
-            item {
-                if (displayMedia.genres.isNotEmpty()) {
-                    GenreChips(genres = displayMedia.genres)
+                // 3. Genre chips (horizontal scroll)
+                item {
+                    if (displayMedia!!.genres.isNotEmpty()) {
+                        GenreChips(genres = displayMedia!!.genres)
+                    }
+                }
+
+                // 4. Score + action buttons
+                item {
+                    ScoreAndActions(media = displayMedia!!)
+                }
+
+                // 5. Synopsis (expandable)
+                item {
+                    SynopsisSection(synopsis = displayMedia!!.description)
+                }
+
+                // 6. Episodes header + list
+                item {
+                    EpisodesHeader(count = episodes.size)
+                }
+                items(episodes, key = { it.number }) { episode ->
+                    EpisodeRow(episode = episode, coverColor = displayMedia!!.coverColor)
                 }
             }
 
-            // 4. Score + action buttons
-            item {
-                ScoreAndActions(media = displayMedia)
+            // Back button (top-left, status bar padded)
+            Box(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .clip(shapes.pill)
+                    .background(colors.background.copy(alpha = 0.6f))
+                    .pressScale(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText(
+                    text = "‹",
+                    style = typography.headingLarge.copy(color = colors.textPrimary),
+                )
             }
 
-            // 5. Synopsis (expandable)
-            item {
-                SynopsisSection(synopsis = displayMedia.description)
-            }
-
-            // 6. Episodes header + list
-            item {
-                EpisodesHeader(count = episodes.size)
-            }
-            items(episodes) { episode ->
-                EpisodeRow(episode = episode, coverColor = displayMedia.coverColor)
-            }
+            CollapsibleHeader(title = displayMedia!!.title, listState = listState, hazeState = hazeState)
         }
-
-        // Back button (top-left, status bar padded)
-        Box(
-            Modifier
-                .statusBarsPadding()
-                .padding(16.dp)
-                .size(40.dp)
-                .clip(shapes.pill)
-                .background(colors.background.copy(alpha = 0.6f))
-                .pressScale(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            BasicText(
-                text = "‹",
-                style = typography.headingLarge.copy(color = colors.textPrimary),
-            )
-        }
-
-        CollapsibleHeader(title = displayMedia.title, listState = listState, hazeState = hazeState)
     }
 }
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -24,12 +25,16 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeChild
 
-// ── Collapsible header with PROGRESSIVE gradient blur (R-13 fix) ──
+// ── Collapsible header with progressive gradient blur ──
 //
-// R-13 FIX: added HazeProgressive.verticalGradient for a gradient blur edge
-// at the bottom of the header (full frost at top → no blur at bottom).
-// This is a REAL progressive blur (not a color scrim) — the iOS-style
-// backdrop-filter gradient.
+// FIX (user feedback): at scroll=0, the header was a completely dark box
+// because backgroundColor = colors.background was always opaque.
+//
+// NOW: backgroundColor alpha transitions 0 → 1 with scroll.
+// - At scroll=0: header is TRANSPARENT (content shows through, no dark box).
+// - On scroll: bg becomes opaque + frosted glass fades in.
+// The text-blur issue only matters when scrolled (when scrimAlpha > 0),
+// by which point backgroundColor is opaque enough for Haze to work.
 
 @Composable
 fun CollapsibleHeader(
@@ -67,8 +72,12 @@ fun CollapsibleHeader(
     val topPad = lerp(8.dp, 2.dp, animatedFraction)
     val bottomPad = lerp(4.dp, 0.dp, animatedFraction)
 
-    // Scrim alpha: 0 → 0.7 (reduced from 0.85 — was too dark).
+    // Scrim alpha: 0 → 0.7
     val scrimAlpha = animatedFraction * 0.7f
+
+    // FIX: backgroundColor alpha transitions 0 → 1 with scroll.
+    // At scroll=0: transparent (no dark box). On scroll: opaque (blur works on text).
+    val bgAlpha = animatedFraction
 
     Box(
         modifier
@@ -76,16 +85,16 @@ fun CollapsibleHeader(
             .hazeChild(
                 state = hazeState,
                 style = HazeStyle(
-                    backgroundColor = colors.background,
+                    backgroundColor = colors.background.copy(alpha = bgAlpha),
                     blurRadius = 28.dp,
                     tints = listOf(HazeTint(colors.surface.copy(alpha = scrimAlpha))),
                 ),
             ) {
-                // R-13: PROGRESSIVE gradient blur — full frost at top → no blur at bottom edge.
-                // This creates the "gradient blur effect at the bottom" the user wants.
+                // Progressive gradient blur — full frost at top → no blur at bottom edge.
+                // Only visible when scrolled (bgAlpha > 0).
                 progressive = HazeProgressive.verticalGradient(
-                    startIntensity = 1f,        // top of header = full blur
-                    endIntensity = 0f,          // bottom edge of header = no blur
+                    startIntensity = 1f,
+                    endIntensity = 0f,
                 )
             }
             .statusBarsPadding()

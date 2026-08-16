@@ -15,12 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.SegmentedControl
+import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaListItem
@@ -39,15 +40,15 @@ fun LibraryScreen(
     var selectedSegment by remember { mutableIntStateOf(0) }
 
     val library by viewModel.library.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-    // Use real AniList data if available, otherwise mock data
-    val displayMedia = if (library.isNotEmpty()) library else MockData.trending
+    val isLoading = isRefreshing && library.isEmpty()
 
     val filteredMedia = when (selectedSegment) {
-        0 -> displayMedia.filter { it.status.name in listOf("CURRENT", "AIRING") }
-        1 -> displayMedia.filter { it.status.name == "COMPLETED" }
-        2 -> displayMedia
-        else -> displayMedia
+        0 -> library.filter { it.status.name in listOf("CURRENT", "AIRING") }
+        1 -> library.filter { it.status.name == "COMPLETED" }
+        2 -> library
+        else -> library
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -67,17 +68,47 @@ fun LibraryScreen(
                 )
             }
             item {
+                val statusText = when {
+                    isLoading -> "Loading from AniList..."
+                    filteredMedia.isNotEmpty() -> "${filteredMedia.size} entries (live from AniList)"
+                    else -> "No entries found"
+                }
                 BasicText(
-                    text = "${filteredMedia.size} entries" + if (library.isNotEmpty()) " (live from AniList)" else " (mock data)",
+                    text = statusText,
                     style = typography.caption.copy(color = colors.textTertiary),
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                 )
             }
-            items(filteredMedia) { media ->
-                MediaListItem(
-                    media = media,
-                    onClick = { onMediaClick(media.id) },
-                )
+
+            if (isLoading) {
+                items(8) {
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
+            } else if (filteredMedia.isNotEmpty()) {
+                items(filteredMedia, key = { it.id }) { media ->
+                    MediaListItem(
+                        media = media,
+                        onClick = { onMediaClick(media.id) },
+                    )
+                }
+            } else {
+                item {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicText(
+                            text = "No entries. Pull to refresh or check your connection.",
+                            style = typography.bodyMedium.copy(color = colors.textTertiary),
+                        )
+                    }
+                }
             }
         }
         CollapsibleHeader(title = "Library", listState = listState, hazeState = hazeState)
