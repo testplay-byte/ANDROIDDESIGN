@@ -13,6 +13,8 @@ class OnlyListApplication : Application() {
         super.onCreate()
         // Install crash handler FIRST — before any other init
         Thread.setDefaultUncaughtExceptionHandler(OnlyListCrashHandler(this))
+        // Initialize the DI container
+        AppContainer.init(this)
         Logger.enabled = BuildConfig.DEBUG
         Logger.i("App", "Only-List ${BuildConfig.VERSION_NAME} started")
     }

@@ -5,17 +5,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.confused.onlylist.AppContainer
+import com.confused.onlylist.common.Logger
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
@@ -23,12 +27,32 @@ import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaCard
 import com.confused.onlylist.ui.components.MediaListItem
+import com.confused.onlylist.ui.components.toUiModel
 
 @Composable
 fun HomeScreen() {
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
+
+    // Offline-first: observe Room data + trigger network refresh
+    val trending by AppContainer.mediaRepository.getTrending().collectAsState(initial = emptyList())
+
+    LaunchedEffect(Unit) {
+        Logger.d("Home", "Refreshing trending from AniList...")
+        val result = AppContainer.mediaRepository.refreshTrending()
+        result.fold(
+            onSuccess = { Logger.d("Home", "Trending refresh OK") },
+            onFailure = { Logger.w("Home", "Trending refresh failed: ${it.message}") },
+        )
+    }
+
+    // Use real data if available, otherwise mock data
+    val trendingMedia = if (trending.isNotEmpty()) {
+        trending.map { it.toUiModel() }
+    } else {
+        MockData.trending
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -63,11 +87,11 @@ fun HomeScreen() {
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     val stats = listOf(
+                        "Trending" to trendingMedia.size.toString(),
                         "Watching" to MockData.currentlyWatching.size.toString(),
                         "Completed" to MockData.completed.size.toString(),
-                        "Airing" to MockData.airingToday.size.toString(),
                     )
-                    androidx.compose.foundation.layout.Row(
+                    Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
@@ -87,42 +111,31 @@ fun HomeScreen() {
                 }
             }
 
-            // Trending now (grid)
+            // Trending now (grid — 2 per row)
             item {
                 SectionHeader("Trending Now")
             }
-            // Grid items — we use a nested LazyVerticalGrid inside the LazyColumn item.
-            // This is fine for small datasets; Phase 2 will use a real grid with nested scroll.
-            item {
-                androidx.compose.foundation.layout.Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MockData.trending.take(2).forEach { media ->
-                        Box(Modifier.weight(1f)) {
-                            MediaCard(
-                                media = media,
-                                onClick = { /* Phase 2: navigate to details */ },
-                            )
-                        }
-                    }
-                }
-            }
-            item {
-                androidx.compose.foundation.layout.Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MockData.trending.drop(2).take(2).forEach { media ->
-                        Box(Modifier.weight(1f)) {
-                            MediaCard(
-                                media = media,
-                                onClick = { /* Phase 2: navigate to details */ },
-                            )
+            val rowCount = (trendingMedia.size + 1) / 2
+            for (rowIndex in 0 until rowCount) {
+                item {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        for (colIndex in 0..1) {
+                            val index = rowIndex * 2 + colIndex
+                            if (index < trendingMedia.size) {
+                                Box(Modifier.weight(1f)) {
+                                    MediaCard(
+                                        media = trendingMedia[index],
+                                        onClick = { /* Phase 2: navigate to details */ },
+                                    )
+                                }
+                            } else {
+                                Box(Modifier.weight(1f))
+                            }
                         }
                     }
                 }
