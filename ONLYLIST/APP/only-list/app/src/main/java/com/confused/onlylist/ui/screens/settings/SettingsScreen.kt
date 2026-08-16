@@ -24,6 +24,7 @@ import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
 import com.confused.onlylist.designsystem.components.pressScale
 import com.confused.onlylist.designsystem.theme.LocalColors
+import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
