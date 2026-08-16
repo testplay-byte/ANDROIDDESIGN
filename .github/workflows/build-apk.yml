@@ -36,6 +36,20 @@ jobs:
           echo "=== Checking for foundation specifically ==="
           gradle :core:designsystem:dependencies --configuration debugCompileClasspath 2>&1 | grep -i "foundation" || echo "FOUNDATION NOT FOUND IN CLASSPATH"
 
+      - name: Inspect Kotlin compile classpath (--info)
+        working-directory: ONLYLIST/APP/only-list
+        run: |
+          gradle :core:designsystem:compileDebugKotlin --info 2>&1 | grep -iE "classpath|foundation|BasicText|compose.*compiler|kotlinCompileClasspath" | head -40 || true
+
+      - name: Check extracted foundation classes in transforms cache
+        run: |
+          echo "=== Transforms cache for foundation ==="
+          find ~/.gradle/caches/transforms* -name "classes.jar" -path "*foundation*" 2>/dev/null | head -5
+          echo "=== All foundation files in gradle cache ==="
+          find ~/.gradle -name "foundation*" 2>/dev/null | head -10
+          echo "=== Designsystem build intermediates ==="
+          find ONLYLIST/APP/only-list/core/designsystem/build -name "*.jar" 2>/dev/null | head -10 || true
+
       - name: Build debug APK
         working-directory: ONLYLIST/APP/only-list
         run: gradle :app:assembleDebug --stacktrace --no-daemon --refresh-dependencies
