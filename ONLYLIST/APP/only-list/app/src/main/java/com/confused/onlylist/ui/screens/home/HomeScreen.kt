@@ -32,7 +32,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun HomeScreen(hazeState: HazeState) {
+fun HomeScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
@@ -129,7 +129,7 @@ fun HomeScreen(hazeState: HazeState) {
                                 Box(Modifier.weight(1f)) {
                                     MediaCard(
                                         media = trendingMedia[index],
-                                        onClick = { /* Phase 3: navigate to details */ },
+                                        onClick = { onMediaClick(trendingMedia[index].id) },
                                     )
                                 }
                             } else {
@@ -146,7 +146,7 @@ fun HomeScreen(hazeState: HazeState) {
             items(MockData.currentlyWatching) { media ->
                 MediaListItem(
                     media = media,
-                    onClick = { /* Phase 3: navigate to details */ },
+                    onClick = { onMediaClick(media.id) },
                 )
             }
         }

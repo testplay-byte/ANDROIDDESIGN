@@ -38,7 +38,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun SearchScreen(hazeState: HazeState) {
+fun SearchScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val shapes = LocalShapes.current
@@ -131,7 +131,7 @@ fun SearchScreen(hazeState: HazeState) {
                                 Box(Modifier.weight(1f)) {
                                     MediaCard(
                                         media = displayResults[index],
-                                        onClick = { /* Phase 3: navigate to details */ },
+                                        onClick = { onMediaClick(displayResults[index].id) },
                                     )
                                 }
                             } else {

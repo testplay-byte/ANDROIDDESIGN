@@ -27,7 +27,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun AiringScreen(hazeState: HazeState) {
+fun AiringScreen(hazeState: HazeState, onMediaClick: (Int) -> Unit = {}) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
@@ -76,7 +76,7 @@ fun AiringScreen(hazeState: HazeState) {
             items(displayAiring) { media ->
                 MediaListItem(
                     media = media,
-                    onClick = { /* Phase 3: navigate to details */ },
+                    onClick = { onMediaClick(media.id) },
                 )
             }
         }

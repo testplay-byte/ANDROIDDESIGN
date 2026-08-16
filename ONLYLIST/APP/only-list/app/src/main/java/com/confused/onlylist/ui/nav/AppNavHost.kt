@@ -42,13 +42,28 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize(),
         ) {
             composable(Destinations.HOME) {
-                HomeScreen(hazeState = sharedHazeState)
+                HomeScreen(
+                    hazeState = sharedHazeState,
+                    onMediaClick = { mediaId ->
+                        navController.navigate(Destinations.details(mediaId))
+                    },
+                )
             }
             composable(Destinations.SEARCH) {
-                SearchScreen(hazeState = sharedHazeState)
+                SearchScreen(
+                    hazeState = sharedHazeState,
+                    onMediaClick = { mediaId ->
+                        navController.navigate(Destinations.details(mediaId))
+                    },
+                )
             }
             composable(Destinations.AIRING) {
-                AiringScreen(hazeState = sharedHazeState)
+                AiringScreen(
+                    hazeState = sharedHazeState,
+                    onMediaClick = { mediaId ->
+                        navController.navigate(Destinations.details(mediaId))
+                    },
+                )
             }
             composable(Destinations.LIBRARY) {
                 LibraryScreen(
