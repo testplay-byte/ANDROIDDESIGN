@@ -29,6 +29,12 @@ class MediaRepository(
         return mediaDao.getTrending(type, limit)
     }
 
+    // ── Airing (status = RELEASING) ──
+
+    fun getAiring(type: String = "ANIME", limit: Int = 20): Flow<List<MediaEntity>> {
+        return mediaDao.getAiring(type, limit)
+    }
+
     suspend fun refreshTrending(type: String = "ANIME", page: Int = 1, perPage: Int = 20): Result<Unit> {
         val result = anilistClient.query(
             query = AniListQueries.trending,
