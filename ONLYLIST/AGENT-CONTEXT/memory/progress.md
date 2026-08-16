@@ -4,58 +4,57 @@
 
 ---
 
-## Session 3 — Phase 1 fixes + Phase 2 data layer (COMPLETE)
+## Session 4 — Phase 1 frosted glass + header + font fixes (COMPLETE)
 
-**Phase:** 1 (fixes) ✅ + 2 (data layer) ✅
+**Phase:** 1 (R-9 fixes) ✅ — CI green
 
 ### Done this session
 
-#### Phase 1 fixes (user-reported bugs)
-- ✅ FIX: Bottom nav at bottom (was at top) — `Modifier.align(Alignment.BottomCenter)`
-- ✅ FIX: Selection reactive — `currentBackStackEntryAsState()` instead of one-shot read
-- ✅ ADD: Mock data on all 6 screens (8 sample anime, GlassCards, grid/card layouts)
-- ✅ ADD: Real bundled fonts (Inter + Sora + JetBrains Mono — variable, all weights)
-- ✅ ADD: Frosted glass aesthetic (translucent gradient + shadow + border on BottomBar + GlassCard)
-- ✅ ADD: Crash handler (OnlyListCrashHandler + ErrorActivity + "Something went wrong" screen)
-- ✅ ADD: MediaCard + MediaListItem components for grid/list layouts
+#### R-9 Research (3-topic deep-dive sub-agent)
+- **Topic 1 — True frosted glass**: `Modifier.blur()` blurs a composable's OWN content, not what's behind. No public `Modifier.blurBehind()` in AndroidX. **Recommendation: Chris Banes' Haze library** — de-facto standard for backdrop blur in Compose. API 21+ (RenderEffect on 31+, RenderScript fallback on ≤30).
+- **Topic 2 — Collapsible header**: use `lerp(displayLarge, titleLarge, fraction)` for title + single `animateFloatAsState(spring)` driving title size + padding + scrim alpha. Read `LazyListState.firstVisibleItemScrollOffset` directly (no `nestedScroll` needed).
+- **Topic 3 — Variable font weights (THE BUG)**: `FontFamily(Font(R.font.inter_variable))` registers ONLY Normal weight. `FontWeight.Bold` in TextStyle is SILENTLY IGNORED. **Fix: register a SEPARATE Font per weight with `FontVariation.Settings(FontVariation.weight(N))`.**
 
-#### Phase 2 (data layer + network + offline-first)
-- ✅ `:core:database` — Room with 5 entities (Media, Episode, MediaListEntry, AiringSchedule, MetadataSourceState) + 5 DAOs + OnlyListDatabase + DatabaseProvider
-- ✅ `:core:network` — AniListGraphQLClient (Ktor POST), AniListAuthManager (OAuth Implicit Grant), AniListConfig (Client ID 48704), AniListQueries (trending/search/mediaById/viewer), KitsuClient (stub), JikanClient (stub)
-- ✅ `:core:data` — MediaRepository (offline-first: Room Flow + AniList refresh + JSON parsing)
-- ✅ AppContainer — simple DI (database + authManager + anilistClient + mediaRepository)
-- ✅ AndroidManifest — deep link `olink://anilist-auth` + `launchMode=singleTask`
-- ✅ MainActivity — handles OAuth redirect (parses token from URL fragment) + `startAniListAuth()` (Chrome Custom Tabs)
-- ✅ HomeScreen — uses REAL AniList trending data via MediaRepository (offline-first: Room Flow + network refresh + mock fallback)
+#### R-10 Research (Haze version compatibility)
+- Haze 1.7.2 (recommended by R-9) was compiled with Kotlin 2.2.0 — metadata version mismatch with our Kotlin 2.0.21.
+- Haze 1.1.1 is the latest compatible with Kotlin 2.0.21 (1.2.0+ requires Kotlin 2.1+). API surface (haze + hazeChild + HazeStyle + HazeTint) is identical.
+
+#### Fixes applied (3 commits, 3 CI iterations → green)
+- ✅ Added Haze 1.1.1 dependency to `:core:designsystem` (via `api()` so it's exposed to `:app`).
+- ✅ Rewrote `BottomBar.kt`: removed `Modifier.shadow(12.dp)` (was the "line" artifact) + gradient seam; replaced with `hazeChild` (real backdrop blur of content behind the bar).
+- ✅ Rewrote `CollapsibleHeader.kt`: title SHRINKS (displayLarge 30sp → titleLarge 18sp via `lerp()`), padding animates (8→2/4→0), scrim is Haze-backed (real frosted blur, 0→0.85 alpha over 200dp scroll), single spring animation drives everything.
+- ✅ Rewrote `FontRegistry.kt`: each weight registered as a SEPARATE Font with explicit `FontVariation.Settings(FontVariation.weight(N))`. Inter (400/500/600/700), Sora (600/700/800), JetBrains Mono (400/500/600). `@OptIn(ExperimentalTextApi::class)` per Aug 2026 docs.
+- ✅ Updated all 6 screens: accept `bottomBarHazeState`, create own `hazeState` for LazyColumn + CollapsibleHeader, apply `Modifier.haze(hazeState)` to LazyColumn (the blur source).
+- ✅ Updated `AppNavHost`: shared `bottomBarHazeState` passed to each screen.
+- ✅ Settings: "Link AniList Account" button — tapping "AniList Account" when not logged in opens Chrome Custom Tabs for OAuth (`MainActivity.startAniListAuth`).
 
 ### CI builds
-- Phase 1 fixes: 2 builds (1 failure — BasicText import, 1 success)
-- Phase 2: 2 builds (1 failure — Room api() + title ref, 1 success)
-- **Final: GREEN** (commit `b5053e7`, Run #33)
+- Run #36: FAILURE — Haze 1.7.2 compiled with Kotlin 2.2.0 (metadata mismatch)
+- Run #37: FAILURE — Haze 1.1.1 used `implementation` (not exposed to :app)
+- Run #38: ✅ SUCCESS — Haze via `api()` (commit `d5352e1`)
+- APK artifact: 10.2MB (up from 7.9MB — Haze + real variable font files)
 
-### What's built
-A launching Android app with:
-- Midnight Coral design system (dark + coral, frosted glass, real variable fonts)
-- 6 screens with mock data + real AniList trending on Home
-- Bottom nav at bottom (fixed) with reactive selection (fixed)
-- Crash handler with error screen
-- Room database (5 entities, offline-ready)
-- AniList GraphQL client (real trending data fetch)
-- AniList OAuth auth (deep link `olink://anilist-auth`)
-- Offline-first MediaRepository
+### What's fixed (user-reported bugs)
+1. ✅ "Line on the bottom nav" — `Modifier.shadow` removed; Haze provides depth without a ring artifact.
+2. ✅ "Frosted glass not achieved" — real backdrop blur via Haze (content behind is now blurred, not just dimmed).
+3. ✅ "Home heading not bold" — variable font weights now render correctly via `FontVariation.Settings`.
+4. ✅ "Home heading doesn't shrink + move up" — `lerp()` animation on title style + padding.
+5. ✅ "No top background to home title" — Haze-backed scrim fades in on scroll.
+6. ✅ "Gradient unnecessary" — gradient replaced with Haze frosted blur.
+7. ✅ "Link AniList account" — Settings button opens OAuth in Chrome Custom Tabs.
 
 ### Next (Phase 3)
 1. Wire real AniList data into Search, Library, Airing, Details screens
-2. Add "Link AniList Account" button in Settings (opens Chrome Custom Tabs)
-3. Add ViewModels for proper state management
-4. Fill in Kitsu + Jikan episode metadata (Details screen)
-5. Add Profile screen with charts
+2. Add ViewModels for proper state management
+3. Details screen — per-episode metadata (Kitsu + Jikan)
+4. Profile screen with charts (radar/spider)
+5. Improve logging with filtering
 
 ### Phase map
 - **Phase 0** ✅: Planning / Setup / Research
-- **Phase 1** ✅: Project scaffolding + design system + 6 screens + CI
+- **Phase 1** ✅: Project scaffolding + design system + 6 screens + CI + frosted glass + header animation + real fonts
 - **Phase 2** ✅: Data layer (Room + AniList + Kitsu/Jikan stubs + repositories)
-- **Phase 3** (next): Wire real data into all screens + ViewModels + Kitsu/Jikan full impl
+- **Phase 3** (next): Wire real data into all screens + ViewModels + Kitsu/Jikan full impl + Profile + logging
 - **Phase 4**: AI agent port + Design Studio
 - **Phase 5**: Backup/restore + dynamic theming
 - **Phase 6**: Polish (animations, charts, notifications, edge cases)
