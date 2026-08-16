@@ -4,58 +4,61 @@
 
 ---
 
-## Session 2 — Answers applied + Phase 1 build (COMPLETE)
+## Session 3 — Phase 1 fixes + Phase 2 data layer (COMPLETE)
 
-**Date:** (session 2)
-**Phase:** 1 — Project scaffolding ✅ COMPLETE (CI green)
+**Phase:** 1 (fixes) ✅ + 2 (data layer) ✅
 
 ### Done this session
-- ✅ Launched 3 parallel research sub-agents (R-5 ANI-KUTA design, R-6 Kilo Code agent, R-7 modern Android design).
-- ✅ Renamed wrapper folder `ANDROIDDESIGN` → `ONLYLIST` (git mv, history preserved).
-- ✅ Rewrote `CORE_RULES.md` concise (704 → 242 lines, 66% reduction).
-- ✅ Applied all user answers to `decisions.md` (D-001..D-071).
-- ✅ Wrote `DESIGN-LANGUAGE.md` (Midnight Coral — dark #14110F + coral #FF6B5C).
-- ✅ Scaffolded the Gradle project: 3 modules (`:app` + `:core:designsystem` + `:core:common`).
-- ✅ Built the design system: AppTheme (5 CompositionLocals), Color, Typography, Shape, Motion, Spacing, FontRegistry, BottomBar (floating pill + animated label reveal), CollapsibleHeader (gradient-scrim scroll-blur), SegmentedControl (3-way toggle), SkeletonBox (shimmer), pressScale modifier.
-- ✅ Built 6 placeholder screens: Home, Library, Search, Airing, Details, Settings.
-- ✅ Built the app shell: OnlyListApplication, MainActivity, AppNavHost (Navigation Compose).
-- ✅ Custom vector icons (5 tabs, non-Material), adaptive launcher icon (coral bg + OL monogram).
-- ✅ GitHub Actions `build-apk.yml` workflow.
-- ✅ V-2 code review (sub-agent): GREEN — no blocking compile errors.
-- ✅ **CI BUILD GREEN** (commit `80f3f09`, Run #29). Debug APK (7.6MB) uploaded as artifact.
 
-### The build-debugging journey (9 CI iterations)
-The build failed 8 times before going green. Root cause: **wrong import packages**.
-- `BasicText` is in `androidx.compose.foundation.text` (NOT `androidx.compose.foundation`).
-- `graphicsLayer` is in `androidx.compose.ui.graphics` (NOT `androidx.compose.ui`).
-- `Image` + `Modifier` resolved fine because they ARE in the root packages — which made the issue look like a dependency resolution problem when it was actually just wrong imports.
-- Found via R-8 sub-agent research (verified against the actual AAR's classes.jar contents).
-- Lesson logged in `lessons-learned.md`.
+#### Phase 1 fixes (user-reported bugs)
+- ✅ FIX: Bottom nav at bottom (was at top) — `Modifier.align(Alignment.BottomCenter)`
+- ✅ FIX: Selection reactive — `currentBackStackEntryAsState()` instead of one-shot read
+- ✅ ADD: Mock data on all 6 screens (8 sample anime, GlassCards, grid/card layouts)
+- ✅ ADD: Real bundled fonts (Inter + Sora + JetBrains Mono — variable, all weights)
+- ✅ ADD: Frosted glass aesthetic (translucent gradient + shadow + border on BottomBar + GlassCard)
+- ✅ ADD: Crash handler (OnlyListCrashHandler + ErrorActivity + "Something went wrong" screen)
+- ✅ ADD: MediaCard + MediaListItem components for grid/list layouts
 
-### What's built (Phase 1 deliverable)
-A launching Android app that demonstrates the full Midnight Coral design system:
-- App launches with edge-to-edge warm dark background (#14110F).
-- Floating pill bottom nav with 5 tabs (Home/Search/Airing/Library/Settings) + animated label reveal.
-- Collapsible header with gradient-scrim scroll-blur on each screen.
-- 6 placeholder screens with themed content (skeletons, segmented controls, cards).
-- Custom non-Material components throughout (BasicText, no material3 imports).
-- Logger wrapper.
-- CI builds a debug APK on every push to main.
+#### Phase 2 (data layer + network + offline-first)
+- ✅ `:core:database` — Room with 5 entities (Media, Episode, MediaListEntry, AiringSchedule, MetadataSourceState) + 5 DAOs + OnlyListDatabase + DatabaseProvider
+- ✅ `:core:network` — AniListGraphQLClient (Ktor POST), AniListAuthManager (OAuth Implicit Grant), AniListConfig (Client ID 48704), AniListQueries (trending/search/mediaById/viewer), KitsuClient (stub), JikanClient (stub)
+- ✅ `:core:data` — MediaRepository (offline-first: Room Flow + AniList refresh + JSON parsing)
+- ✅ AppContainer — simple DI (database + authManager + anilistClient + mediaRepository)
+- ✅ AndroidManifest — deep link `olink://anilist-auth` + `launchMode=singleTask`
+- ✅ MainActivity — handles OAuth redirect (parses token from URL fragment) + `startAniListAuth()` (Chrome Custom Tabs)
+- ✅ HomeScreen — uses REAL AniList trending data via MediaRepository (offline-first: Room Flow + network refresh + mock fallback)
 
-### Next (Phase 2)
-1. Data layer: Room schema (media, episode, media_list_entry, airing_schedule, etc.).
-2. Network layer: AniList (Apollo Kotlin GraphQL), Kitsu + Jikan (Ktor REST).
-3. Offline-first repositories.
-4. Real fonts bundled (Inter + Sora + JetBrains Mono — currently using system fonts as placeholder).
+### CI builds
+- Phase 1 fixes: 2 builds (1 failure — BasicText import, 1 success)
+- Phase 2: 2 builds (1 failure — Room api() + title ref, 1 success)
+- **Final: GREEN** (commit `b5053e7`, Run #33)
+
+### What's built
+A launching Android app with:
+- Midnight Coral design system (dark + coral, frosted glass, real variable fonts)
+- 6 screens with mock data + real AniList trending on Home
+- Bottom nav at bottom (fixed) with reactive selection (fixed)
+- Crash handler with error screen
+- Room database (5 entities, offline-ready)
+- AniList GraphQL client (real trending data fetch)
+- AniList OAuth auth (deep link `olink://anilist-auth`)
+- Offline-first MediaRepository
+
+### Next (Phase 3)
+1. Wire real AniList data into Search, Library, Airing, Details screens
+2. Add "Link AniList Account" button in Settings (opens Chrome Custom Tabs)
+3. Add ViewModels for proper state management
+4. Fill in Kitsu + Jikan episode metadata (Details screen)
+5. Add Profile screen with charts
 
 ### Phase map
-- **Phase 0** ✅: Planning / Setup / Research.
-- **Phase 1** ✅: Project scaffolding + design system + 6 placeholder screens + CI green.
-- **Phase 2** (next): Data layer (Room, AniList/Kitsu/Jikan, repositories).
-- **Phase 3**: Core screens with real data.
-- **Phase 4**: AI agent port + Design Studio.
-- **Phase 5**: Backup/restore + dynamic theming.
-- **Phase 6**: Polish (animations, charts, notifications, edge cases).
+- **Phase 0** ✅: Planning / Setup / Research
+- **Phase 1** ✅: Project scaffolding + design system + 6 screens + CI
+- **Phase 2** ✅: Data layer (Room + AniList + Kitsu/Jikan stubs + repositories)
+- **Phase 3** (next): Wire real data into all screens + ViewModels + Kitsu/Jikan full impl
+- **Phase 4**: AI agent port + Design Studio
+- **Phase 5**: Backup/restore + dynamic theming
+- **Phase 6**: Polish (animations, charts, notifications, edge cases)
 
 ---
 
