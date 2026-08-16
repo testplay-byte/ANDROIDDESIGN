@@ -20,7 +20,9 @@
 - ✅ Launched 4 parallel research sub-agents (R-1 Cline, R-2 AniList, R-3 Kitsu+Jikan, R-4 Android design system). All completed with verified findings.
 - ✅ Wrote refined `CORE_RULES.md` (adapted from reference: dropped ANI-KUTA-specifics, added AI-agent/design-token/offline-first/backup/non-Material rules).
 - ✅ Wrote `knowledge/architecture.md` (tech stack, module graph, data flow, agent integration, backup flow).
-- ✅ Initiated shallow clone of Cline into `references/cline/` (background).
+- ✅ Pushed Phase 0 planning artifacts to GitHub (commit `3106091` + `ba86f9a`).
+- ✅ Launched V-1 review sub-agent — verdict APPROVE WITH MINOR FIXES. Found 5 MAJOR issues + 4 missing questions.
+- ✅ Incorporated V-1 feedback into CORE_RULES (§28 iteration cap + truncation threshold; §29 layout/sorting storage rules + new §29.1 user-facing theme editing; §31 AniList token expiry handling; §22 added sorting-rules.md + screen-layouts.md) and open-questions.md (7 new risks in Highlights + Q-033..Q-036 blocking) and .gitignore (signing files).
 
 ### In progress
 - 🔄 Writing the open-questions list for user clarification.

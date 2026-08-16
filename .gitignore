@@ -50,6 +50,16 @@ dist/
 .next/
 .cache/
 
+# --- Android signing (release keystore — never commit) ---
+*.keystore
+*.jks
+key.properties
+keystore.properties
+# Google services (Firebase) — if ever added
+google-services.json
+# Play Console service account
+play-service-account.json
+
 # --- Editor files ---
 *.swp
 *.swo

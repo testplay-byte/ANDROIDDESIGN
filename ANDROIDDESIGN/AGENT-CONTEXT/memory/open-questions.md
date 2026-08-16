@@ -32,6 +32,20 @@ These are things I want to flag proactively (CORE_RULES §2: proactively highlig
 
 10. **I built x86_64 into the ABI set** (per your approval this session) so the Android emulator works now that you've enabled Hyper-V. Physical device remains the primary test target; emulator is secondary.
 
+11. **LLM cost is real money.** Every agent run = API calls = your money. I've added an iteration cap (25 per task) + a soft per-run token budget in CORE_RULES §28. But you should set a monthly spending limit at your LLM provider (OpenAI/Anthropic/etc.) as a hard backstop. The app can't enforce that; your provider can. (V-1 review.)
+
+12. **Agent battery drain.** A 25-iteration agent run with streaming + palette extraction can take 30-90 seconds + keep the device awake. CORE_RULES §28 caps iterations, but you should know: the agent is best used while plugged in. Don't run a long agent task on a low-battery device. (V-1 review.)
+
+13. **AniList ToS compliance.** We poll AniList at most daily per airing anime + on-app-open for notifications. This is well within AniList's rate limit (30/min) + their ToS allows API use with attribution. But if you plan to publish the app, re-read AniList's API ToS (https://anilist.gitbook.io/anilist-apiv2-docs/) + add attribution in Settings → About. (V-1 review.)
+
+14. **Image CDN hotlinking.** We load images directly from `s4.anilist.co/file/anilistcdn/...` (AniList), `media.kitsu.app/...` (Kitsu), `cdn.myanimelist.net/...` (Jikan/MAL). Coil caches them locally. These CDNs allow hotlinking for app use (it's how the AniList ecosystem works), but if a CDN starts blocking us, we'd need a proxy. Low risk for v1. (V-1 review.)
+
+15. **Backup export privacy (GDPR-ish).** If you export a backup to `MediaStore.Downloads` (so you can copy it to a PC), that folder is shared storage on Android — other apps with storage permission could read it. **If the backup includes the encrypted AniList token, a weak passphrase = the token leaks.** Mitigation: require a passphrase (PBKDF2 with high iterations) for any export to shared storage. (V-1 review — see Q-035.)
+
+16. **OAuth custom-scheme interception.** Another malicious app could register the same custom URI scheme (`com.testplaybyte.anidesign://`) and intercept the OAuth redirect. Android shows a disambiguation dialog if multiple apps handle the scheme, but it's not bulletproof. **Android App Links** (verified via `assetlinks.json` on a website you own) are hardened but require hosting. (V-1 review — see Q-034.)
+
+17. **Backup passphrase loss = data loss.** If you set a passphrase for a backup + forget it, the AniList token in that backup is unrecoverable. The design + DB can still be restored (if you included them without token-level encryption), but the token is gone — you'd re-link AniList. There's no "forgot passphrase" path by design (no server to verify against). (V-1 review.)
+
 ---
 
 ## Blocking questions (need answers before Phase 1 starts)
@@ -96,6 +110,36 @@ Am I missing any screens you want? (e.g. Characters, Studios, Notifications list
 
 ### Q-012 — Manga scope
 Same screens as anime (tracker only, no reader), OR do you want a manga reader for tracking chapter progress? I assume **tracker-only for v1** (no reader). Confirm.
+
+### Additional blocking questions (from V-1 review)
+
+These 4 came out of the planning-artifacts review (V-1). Adding them to blocking because they affect the architecture / security model.
+
+### Q-033 — LLM cost guardrails
+The agent has an iteration cap (25) + a soft per-run token budget warn (CORE_RULES §28 rule 11-12). Do you want anything stricter?
+- (a) Just the cap + warn (current). **Default.**
+- (b) A hard per-run token budget that ABORTS the run when exceeded.
+- (c) A daily/weekly aggregate budget that disables the agent when exceeded.
+- (d) No guardrails (you monitor cost at your provider).
+
+### Q-034 — AniList OAuth redirect: custom scheme vs Android App Links
+- (a) **Custom URI scheme** (`com.testplaybyte.anidesign://anilist-auth`) — faster to set up, no website needed, but theoretically interceptable by another app registering the same scheme (Android shows a disambiguation dialog). **Default.**
+- (b) **Android App Links** (`https://<your-domain>/anilist-auth`) — hardened (verified via `assetlinks.json` on a website you own), but requires you to own a domain + host a small JSON file. Which do you want?
+
+### Q-035 — Backup export to shared storage (MediaStore.Downloads)
+When the user exports a backup to Downloads (for cross-device transfer):
+- (a) Require a user-set passphrase (PBKDF2, high iterations) for ANY export to shared storage. The token can't be plaintext in a shared folder. **Default.**
+- (b) Allow passphrase-less export to shared storage (convenient, but the AniList token would be Keystore-wrapped = device-bound = useless on another device, so you'd have to re-link AniList after restore anyway). In which case, why export the token at all?
+- (c) Don't allow export to shared storage at all — backups stay in app-private storage + can only be restored on the same device (limits cross-device transfer).
+
+### Q-036 — Analytics / crash reporting
+For a debug-build v1, do you want any analytics/crash reporting?
+- (a) **None** — the global crash handler (CORE_RULES §26) writes to `filesDir/last_crash.txt` + shows the ErrorActivity; the user copies logs manually. **Default.**
+- (b) Firebase Crashlytics (Google).
+- (c) Sentry.
+- (d) Custom (a small endpoint you host).
+
+(Affects: dependencies, privacy policy, Google Services plugin if Firebase.)
 
 ---
 
@@ -168,8 +212,8 @@ Once the app skeleton is built + pushed to CI + APK artifact is available, shoul
 
 ## Summary
 
-- **12 blocking questions** (Q-001..Q-012) — need answers before Phase 1.
+- **16 blocking questions** (Q-001..Q-012 + Q-033..Q-036) — need answers before Phase 1.
 - **13 non-blocking questions** (Q-013..Q-025) — I'll proceed with my proposed defaults unless you object.
 - **6 deferred questions** (Q-026..Q-031) — for later phases.
 
-Take your time answering. The blocking ones are mostly identity (app name, package, wrapper folder, starter aesthetic) + AniList OAuth client registration + LLM provider preference + screen/manga scope confirmation. Once those are answered, I can scaffold the Gradle project and begin Phase 1.
+Take your time answering. The blocking ones are mostly identity (app name, package, wrapper folder, starter aesthetic) + AniList OAuth client registration + LLM provider preference + screen/manga scope confirmation + 4 security/cost guardrails from the V-1 review (Q-033..Q-036). Once those are answered, I can scaffold the Gradle project and begin Phase 1.

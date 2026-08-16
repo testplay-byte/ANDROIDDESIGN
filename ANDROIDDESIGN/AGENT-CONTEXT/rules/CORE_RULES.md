@@ -417,6 +417,8 @@ APP/ani-design/DOCUMENTATION/database/
 ├── user.md                — user profile cache
 ├── metadata-source-state.md — per-source fetch state (lastFetched, backoff, etc.)
 ├── design-snapshots.md    — AI agent's design-token snapshots (for rollback)
+├── sorting-rules.md      — sorting_rules table (custom sort DSL per list)
+├── screen-layouts.md     — screenLayouts section of theme.json (layout variant selections)
 └── app.md                 — app_metadata (version, last backup, etc.)
 ```
 
@@ -501,7 +503,7 @@ APP/ani-design/DOCUMENTATION/database/
 ### Rules
 1. **Module shape**: `:core:agent:core` (agent loop, context manager), `:core:agent:llm` (provider abstraction — Anthropic, OpenAI, OpenRouter, Gemini, + OpenAI-compatible generic), `:core:agent:tools` (tool registry), `:core:agent:permissions` (approval gateway). Pure Kotlin where possible; Android-only at the edges.
 2. **Agent loop**: iterative `while(isActive)` Kotlin coroutine (NOT recursive like Cline's `recursivelyMakeClineRequests`). Read context → decide action → call tool → observe → repeat until `attempt_completion`.
-3. **Context management**: quarter-truncation strategy when approaching the context window limit (drop ~25% oldest undeletable messages, preserve the initial exchange + the most recent tool results). File-read dedup with `[DUPLICATE FILE READ]` notices.
+3. **Context management**: quarter-truncation strategy — start truncating at **50% remaining context** (NOT 70% — mobile constraints: smaller context windows + cost sensitivity). Drop ~25% oldest undeletable messages, preserve the initial exchange + the most recent tool results. File-read dedup with `[DUPLICATE FILE READ]` notices. (Per R-1 §11.4 mobile-specific recommendation.)
 4. **Tool surface** (the ONLY way the agent touches the app state):
    - `read_design_tokens` — read the current `theme.json`.
    - `apply_token_patch` — apply a JSON-Patch (RFC 6902) to the design tokens.
@@ -519,7 +521,9 @@ APP/ani-design/DOCUMENTATION/database/
 7. **LLM streaming**: stream responses via SSE (Server-Sent Events) for token-by-token rendering in the agent chat UI.
 8. **No terminal, no filesystem browsing, no MCP-stdio**: drop Cline's `bash`/`execute_command`, browser automation, and stdio MCP. The agent operates ONLY on design tokens + layout/component variants + sorting rules. HTTP-based MCP servers can be added post-MVP if a use case emerges.
 9. **Provider key storage**: the user's LLM API key is stored in Android Keystore (encrypted). Never logged, never in backups unless the user explicitly opts in (§31).
-10. **The agent is OPTIONAL.** The app must be fully usable without ever invoking the agent. The agent is a power-user feature for design customization.
+10. **The agent is OPTIONAL.** The app must be fully usable without ever invoking the agent. The agent is a power-user feature for design customization. The design-token system + preset picker + image-palette flow MUST be usable by hand (no agent) — see §29.1.
+11. **Iteration cap**: cap agent iterations at **25 per task** (mobile battery + LLM cost protection). If the agent hits the cap without `attempt_completion`, it stops + asks the user how to proceed (continue / abort / simplify the goal). Configurable in Settings (default 25). (Per R-1 §14.1 mobile recommendation.)
+12. **Per-run cost guard**: the agent shows an estimated token-cost summary before each run (input + output tokens × user's provider rate, if the user set their rate in Settings). The user can set a soft per-run token budget; the agent warns (not blocks) when exceeded.
 
 ---
 
@@ -535,6 +539,19 @@ APP/ani-design/DOCUMENTATION/database/
 5. **Font families** are bundled (res/font) and referenced by key in the token set. Swapping the font family is a token edit, not a code change. (See §34 — bundle Inter + Sora + JetBrains Mono, all OFL.)
 6. **The AI agent edits tokens, not code.** The agent never writes Kotlin/Compose files. It only writes to `theme.json` (+ sorting rules + layout/component variant selections).
 7. **Schema evolution**: if the token schema changes, bump `$schema` version + write a migrator. Old backups must still restore (migrate on import).
+8. **Layout selections** live IN `theme.json` under a `screenLayouts` section (a map of `screenId → layoutId`). Swapping a screen's layout is a token edit (the `swap_layout` agent tool writes here). The UI reads the active layout id per screen + renders the corresponding composable variant.
+9. **Component variant selections** live IN `theme.json` under `componentVariants` (a map of `componentKey → variantId`). The `set_component_variant` agent tool writes here.
+10. **Sorting rules** live in a **separate Room table `sorting_rules`** (NOT in theme.json — sorting is data behavior, not visual design). Schema: `id, list_type (ANIME_LIST|MANGA_LIST|...), rule_id, dsl_text, is_active, created_at, updated_at`. The DSL is a simple expression: `sort by: score desc, title asc, status asc` (parseable by a small parser in `:core:data`). The `set_sorting_rule` agent tool writes here. The user can also edit sorting rules by hand in Settings → Sorting.
+
+### 29.1 User-Facing Theme Editing (No Agent Required)
+
+> Reinforces §28 rule 10. The app MUST be fully customizable WITHOUT the AI agent. The agent is a convenience, not a dependency. If the only way to change the theme were via the agent, a user without an LLM API key (or who doesn't want AI) would be locked into the starter theme — unacceptable.
+
+1. **Settings → Theme Editor**: a JSON editor screen where the user can view + edit the raw `theme.json` (with syntax highlighting + validation). Power users can hand-edit tokens.
+2. **Settings → Preset Themes**: a picker for bundled + saved themes ("Midnight", "Paper", "Sunset", custom). Switching is instant (writes to active `StateFlow<DesignTokens>`).
+3. **Settings → Image → Palette**: the user picks an image, the app extracts a palette (§33), previews it, and commits — all WITHOUT the agent. The agent's `apply_image_palette` tool calls the same `ThemeRepository.commitFromPalette(image, mapping)` method.
+4. **Settings → Design History**: the user can browse + restore design snapshots (§28 rule 6) — also without the agent.
+5. **The agent's tools call the same repository methods as the manual UI.** There is ONE `ThemeRepository` with methods like `commit(tokens)`, `commitFromPalette(image, mapping)`, `rollbackTo(snapshotId)`, `savePreset(name, tokens)`. The agent's `commit` tool + the manual "Save" button both call `ThemeRepository.commit()`. No duplication — the agent is just another caller of the same repository.
 
 ---
 
@@ -579,6 +596,7 @@ APP/ani-design/DOCUMENTATION/database/
 6. **Rate-limit handling**: single-flight queue per source; sliding 60s window; respect `Retry-After` header (AniList returns it). Dedupe in-flight requests. (AniList currently degraded to 30 req/min — design for that, not the documented 90.)
 7. **GraphQL cache**: Apollo Kotlin normalized cache (in-memory + persistent SQLite). Query results populate the normalized cache; the DB holds the domain models.
 8. **Pull-to-refresh**: always re-fetches from network (bypassing cache TTL) but does NOT block the UI — local data stays visible until new data lands.
+9. **AniList token expiry handling**: the auth token is a 1-year JWT (D-017). On app launch, decode the JWT `exp` claim client-side. If expiry is within 7 days, show a non-intrusive banner ("AniList session expires in N days — re-link to refresh"). If expired, block all authenticated writes (mutations) + show a full-screen re-auth prompt. Read-only access (public AniList queries + all local cache) continues to work. The user re-links via OAuth to get a fresh 1-year token.
 
 ---
 
