@@ -41,7 +41,8 @@ dependencies {
     // Haze — true frosted glass backdrop blur (per R-9 + R-10 research).
     // v1.1.1 is the latest compatible with Kotlin 2.0.21 (1.2.0+ requires Kotlin 2.1+).
     // API surface (haze + hazeChild + HazeStyle + HazeTint) is the same as 1.7.2.
-    implementation("dev.chrisbanes.haze:haze:1.1.1")
+    // Use 'api' so HazeState + haze/hazeChild modifiers are exposed to :app + :feature modules.
+    api("dev.chrisbanes.haze:haze:1.1.1")
 
     implementation("androidx.core:core-ktx:1.15.0")
 }
