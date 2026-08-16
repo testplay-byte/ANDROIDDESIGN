@@ -4,90 +4,80 @@
 
 ---
 
-## Session 5 — Phase 1 R-11 fixes + Phase 3 (COMPLETE)
+## Session 6 — R-12 whole-page blur fix + Phase 3.5 (COMPLETE)
 
-**Phase:** 1 (frosted glass + header + OAuth fixes) ✅ + 3 (real data + ViewModels + Profile) ✅
+**Phase:** 1 (R-12 fix) ✅ + 3.5 (episode metadata + Viewer stats + logging) ✅
 
 ### Done this session
 
-#### Phase 1 fixes (user-reported issues)
+#### R-12 — Whole-page blur fix (user-reported)
+- **R-12 sub-agent research**: diagnosed the root cause. `Modifier.haze()` does NOT blur the source's own content (verified in Haze 1.1.1 source — `HazeNode.kt` lines 77-102). The bug was in `CollapsibleHeader.kt`: the inner scrim Box used `Modifier.fillMaxSize()` inside a wrap-content parent Box. Per Compose docs, `fillMaxSize()` on a child of a wrap-content parent causes the parent to EXPAND to full screen height → the opaque `.background()` + `hazeChild` covered the whole screen.
+- **Fix (Option A per R-12)**: applied `hazeChild` DIRECTLY to the outer Box. Removed the inner scrim Box + the opaque `.background()`. `HazeStyle.backgroundColor = colors.background` provides the visual backing. The outer Box now wraps to the title's measured height → blur only covers the header area.
+- Reduced scrim alpha 0.85 → 0.7 (was too dark per user feedback).
+- **Media tap navigation**: Home/Search/Airing/Library screens now accept `onMediaClick` callback → navigate to Details. Fixed `it.id` → `trendingMedia[index].id` / `media.id`.
+- **Bottom nav on Details**: already hidden (checks `bottomNavRoutes` which excludes Details).
 
-1. **REAL Haze blur** (was just tint, no blur)
-   - ROOT CAUSE: AppNavHost created a separate `bottomBarHazeState` with NO source composable marked `Modifier.haze()`. Each screen had its OWN hazeState. So the bottom bar's HazeState had nothing to sample.
-   - FIX: Single shared `HazeState` per app. Each screen marks its LazyColumn with `Modifier.haze(sharedHazeState)`. The bottom bar + header consume via `hazeChild(sharedHazeState)`.
+#### Phase 3.5 — Episode metadata + Viewer stats + logging
 
-2. **AniList OAuth "unsupported_grant_type" fix**
-   - ROOT CAUSE: We passed `redirect_uri=olink://anilist-auth` in the authorize URL. Per AniList's Implicit Grant docs, the URL should be ONLY `?client_id={id}&response_type=token`. The redirect_uri comes from the app's AniList developer settings.
-   - FIX: `AniListConfig.authUrl()` no longer includes redirect_uri.
+1. **EpisodeMetadataRepository** (`:core:data`)
+   - Merges Kitsu (primary) + Jikan (filler/dates) per R-3 research.
+   - Kitsu: thumbnails, synopses, titles (en/jp), duration (primary).
+   - Jikan: air dates (TZ-aware), filler/recap flags (primary).
+   - Append-never-overwrite: existing episodes only update missing fields.
+   - ID mapping: AniList.id → Kitsu via mappings; AniList.idMal → Jikan.
+   - Writes merged EpisodeEntity list to Room.
 
-3. **Header improvements**
-   - Title 1.5x bigger: `displayLarge` 30sp → 45sp.
-   - Title STAYS BOLD always: removed the `lerp` on `fontWeight` (was causing the "bold → normal → bold again" flicker). Now lerps only `fontSize` + padding.
-   - Full background behind header: the header Box always has `colors.background`.
-   - Frosted glass scrim: Haze-backed, 0 → 0.85 alpha on scroll.
+2. **DetailsViewModel**: uses EpisodeMetadataRepository
+   - After media loads, fetches episodes via `episodeRepo.refreshEpisodes()`.
+   - Reads merged episodes from Room (Flow.first()).
+   - Falls back to placeholder episodes if all sources fail.
 
-#### Phase 3 — Real data + ViewModels + Profile
+3. **Real AniList Viewer stats on Profile** (when authenticated)
+   - ProfileViewModel: fetches Viewer query (name, avatar, anime/manga statistics).
+   - AniListQueries.viewer: now includes `statistics { anime { count, episodesWatched, minutesWatched, meanScore }, manga { count, chaptersRead, volumesRead } }`.
+   - ProfileUiState: Loading / Mock / Loaded sealed interface.
+   - ProfileScreen: shows real avatar (Coil), name, anime count, episodes watched when authenticated; mock stats otherwise.
 
-1. **Coil image loading** (real cover images)
-   - Added `coil-compose` 3.0.4 + `coil-network-okhttp` 3.0.4.
-   - `MediaCard` + `MediaListItem`: `AsyncImage` loads real AniList cover URLs; falls back to color gradient.
+4. **Logs screen with filtering** (per CORE_RULES §20)
+   - Logger enhanced: in-memory ring buffer (500 entries) of LogEntry.
+   - LogEntry: timestamp, level (V/D/I/W/E), tag, message, stackTrace.
+   - Logger.logBuffer StateFlow<List<LogEntry>> (observable).
+   - Logger.clear() to wipe the buffer.
+   - LogsScreen: shows recent log entries with level filter (All/Info/Warn/Error).
+   - SegmentedControl for level filtering.
+   - Clear button.
+   - Monospace font for log entries.
+   - Color-coded by level.
+   - Settings → Logs item navigates to Logs screen.
 
-2. **ViewModels** for Search, Library, Airing, Details
-   - `SearchViewModel`: debounced query (400ms) → Room search Flow → AniList refresh.
-   - `LibraryViewModel`: observes Room trending Flow + AniList refresh.
-   - `AiringViewModel`: observes Room airing Flow (status=RELEASING) + AniList refresh.
-   - `DetailsViewModel`: loads single media by ID + generates episode list (mock; Kitsu/Jikan in Phase 3.5).
-
-3. **Real AniList data wired into all screens**
-   - Home: real trending (was already done in Phase 2).
-   - Search: real search results with "(live from AniList)" label.
-   - Library: real trending data with "(live from AniList)" label.
-   - Airing: real airing schedule (status=RELEASING media).
-   - Details: real cover banner (Coil) + real metadata + episode list (mock).
-   - Profile: mock stats (Phase 3.5 will use real Viewer data).
-
-4. **Profile screen with radar chart**
-   - Custom Canvas radar/spider chart (6 axes, 5 grid levels, data polygon + points).
-   - Genre distribution visualization.
-   - Top genres list with score bars.
-   - Quick stats (Total, Episodes, Watching).
-   - Profile header with avatar placeholder.
-   - Navigation: Settings → Profile item navigates to Profile screen.
+5. **AniListGraphQLClient**: added Logger.d/w logging for query + errors.
 
 ### CI builds
-- Run #41: FAILURE (PaddingValues import)
-- Run #42: ✅ (Phase 1 fixes)
-- Run #43: ✅ (Coil + Search/Library VMs)
-- Run #44: FAILURE (getAiring missing on repo + PaddingValues)
-- Run #45: ✅ (Airing/Details VMs)
-- Run #46: FAILURE (width import in Profile)
-- Run #47: ✅ (Profile screen — commit `7b826f2`)
-- APK artifact: 10.6MB
+- Run #49: ✅ (R-12 whole-page blur fix + navigation)
+- Run #50: FAILURE (`:core:data` missing `:core:common` dep + async issues)
+- Run #51: FAILURE (Pair destructuring ambiguity)
+- Run #52: ✅ (sequential fetch)
+- Run #53: FAILURE (`:core:network` missing `:core:common` dep)
+- Run #54: FAILURE (`:app` missing serialization dep + LogsScreen smart cast)
+- Run #55: FAILURE (LogsScreen smart cast still broken)
+- Run #56: ✅ (Phase 3.5 complete — commit `aa01d8f`)
+- APK artifact: 10.7MB
 
-### What's built (Phase 3 deliverable)
-- Real AniList trending data on Home + Library + Airing.
-- Real AniList search results on Search (debounced).
-- Real cover images via Coil on all cards + Details banner.
-- Real AniList media metadata on Details (title, format, season, year, episodes, genres, description, score).
-- Episode list on Details (mock — Kitsu/Jikan in Phase 3.5).
-- Profile screen with radar chart + genre bars + quick stats.
-- ViewModels for proper state management (Search, Library, Airing, Details).
-- Settings → Profile navigation.
-- AniList OAuth login flow (fixed — should work now).
-
-### Deferred to Phase 3.5
-1. Kitsu + Jikan episode metadata (real per-episode thumbnails, synopses, air dates).
-2. Real AniList Viewer data on Profile (when authenticated) — real stats, real radar chart.
-3. Improved logging screen with filtering.
-4. AniList MediaListCollection (user's actual lists, not trending) when authenticated.
+### What's built (Phase 3.5 deliverable)
+- Real episode metadata from Kitsu + Jikan on Details screen (merged per R-3 strategy).
+- Real AniList Viewer stats on Profile when authenticated (name, avatar, anime count, episodes watched).
+- Logs screen with level filtering + clear button + color-coded entries.
+- Whole-page blur fixed (only the header + bottom nav are frosted now).
+- Media tap navigation works (Home/Search/Airing/Library → Details).
+- Bottom nav hidden on Details screen.
 
 ### Phase map
 - **Phase 0** ✅: Planning / Setup / Research
 - **Phase 1** ✅: Project scaffolding + design system + frosted glass + header animation + fonts
 - **Phase 2** ✅: Data layer (Room + AniList + Kitsu/Jikan stubs + repositories)
 - **Phase 3** ✅: Real data on all screens + ViewModels + Coil images + Profile with charts
-- **Phase 3.5** (next): Kitsu/Jikan episode metadata + real Viewer stats + logging screen
-- **Phase 4**: AI agent port + Design Studio
+- **Phase 3.5** ✅: Kitsu/Jikan episode metadata + real Viewer stats + logging screen
+- **Phase 4** (next): AI agent port + Design Studio
 - **Phase 5**: Backup/restore + dynamic theming
 - **Phase 6**: Polish (animations, charts, notifications, edge cases)
 
