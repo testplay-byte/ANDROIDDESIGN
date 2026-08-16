@@ -1,6 +1,6 @@
 package com.confused.onlylist.ui.screens.search
 
-import androidx.compose.foundation.BasicText
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
