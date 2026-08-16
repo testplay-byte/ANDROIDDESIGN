@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.AppContainer
 import com.confused.onlylist.MainActivity
@@ -24,18 +24,14 @@ import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
 import com.confused.onlylist.designsystem.components.pressScale
 import com.confused.onlylist.designsystem.theme.LocalColors
-import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
-fun SettingsScreen(bottomBarHazeState: HazeState) {
+fun SettingsScreen(hazeState: HazeState) {
     val listState = rememberLazyListState()
-    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
-    val shapes = LocalShapes.current
     val typography = LocalTypography.current
     val context = LocalContext.current
 
@@ -69,7 +65,7 @@ fun SettingsScreen(bottomBarHazeState: HazeState) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().haze(hazeState),
-            contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
             sections.forEach { section ->
                 item {

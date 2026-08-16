@@ -17,14 +17,14 @@ data class OnlyListTypography(
     val displayLarge: TextStyle = TextStyle(
         fontFamily = FontRegistry.display,
         fontWeight = FontWeight.Bold,
-        fontSize = 30.sp,
-        lineHeight = 36.sp,
+        fontSize = 45.sp,
+        lineHeight = 52.sp,
     ),
     val displayMedium: TextStyle = TextStyle(
         fontFamily = FontRegistry.display,
         fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        lineHeight = 30.sp,
+        fontSize = 30.sp,
+        lineHeight = 36.sp,
     ),
     val headingLarge: TextStyle = TextStyle(
         fontFamily = FontRegistry.display,

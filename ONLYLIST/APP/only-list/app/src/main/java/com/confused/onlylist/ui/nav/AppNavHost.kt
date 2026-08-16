@@ -22,15 +22,25 @@ import com.confused.onlylist.ui.screens.search.SearchScreen
 import com.confused.onlylist.ui.screens.settings.SettingsScreen
 import dev.chrisbanes.haze.HazeState
 
+/**
+ * Single shared HazeState for the whole app.
+ *
+ * R-11 FIX: The previous design had each screen create its OWN HazeState for
+ * its LazyColumn + CollapsibleHeader, and a SEPARATE bottomBarHazeState in
+ * AppNavHost for the bottom bar. But no composable was marked as the SOURCE
+ * for bottomBarHazeState — so Haze had nothing to sample → no blur, just tint.
+ *
+ * The fix: ONE shared HazeState. Each screen marks its LazyColumn with
+ * Modifier.haze(sharedHazeState) (the blur source). The bottom bar + header
+ * consume via hazeChild(sharedHazeState). Haze samples whichever composable
+ * is currently visible behind the bar/header.
+ */
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    // Shared HazeState — the bottom bar reads from whatever screen is visible.
-    // Each screen also has its own HazeState for its LazyColumn + header; the bar
-    // gets a screen-level hazeState passed via the composable() lambda below.
-    val bottomBarHazeState = remember { HazeState() }
+    val sharedHazeState = remember { HazeState() }
 
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -39,24 +49,24 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize(),
         ) {
             composable(Destinations.HOME) {
-                HomeScreen(bottomBarHazeState = bottomBarHazeState)
+                HomeScreen(hazeState = sharedHazeState)
             }
             composable(Destinations.SEARCH) {
-                SearchScreen(bottomBarHazeState = bottomBarHazeState)
+                SearchScreen(hazeState = sharedHazeState)
             }
             composable(Destinations.AIRING) {
-                AiringScreen(bottomBarHazeState = bottomBarHazeState)
+                AiringScreen(hazeState = sharedHazeState)
             }
             composable(Destinations.LIBRARY) {
                 LibraryScreen(
-                    bottomBarHazeState = bottomBarHazeState,
+                    hazeState = sharedHazeState,
                     onMediaClick = { mediaId ->
                         navController.navigate(Destinations.details(mediaId))
                     },
                 )
             }
             composable(Destinations.SETTINGS) {
-                SettingsScreen(bottomBarHazeState = bottomBarHazeState)
+                SettingsScreen(hazeState = sharedHazeState)
             }
             composable(
                 route = Destinations.DETAILS,
@@ -73,6 +83,8 @@ fun AppNavHost() {
         }
 
         // Floating pill bottom nav overlays the content.
+        // Uses the SAME sharedHazeState as the screens — so it blurs whatever
+        // LazyColumn is currently visible behind it.
         if (currentRoute in Destinations.bottomNavRoutes) {
             OnlyListBottomBar(
                 currentRoute = currentRoute ?: Destinations.HOME,
@@ -87,7 +99,7 @@ fun AppNavHost() {
                         }
                     }
                 },
-                hazeState = bottomBarHazeState,
+                hazeState = sharedHazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

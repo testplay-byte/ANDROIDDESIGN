@@ -37,9 +37,8 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun SearchScreen(bottomBarHazeState: HazeState) {
+fun SearchScreen(hazeState: HazeState) {
     val listState = rememberLazyListState()
-    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
@@ -59,7 +58,7 @@ fun SearchScreen(bottomBarHazeState: HazeState) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().haze(hazeState),
-            contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
             item {
                 Box(

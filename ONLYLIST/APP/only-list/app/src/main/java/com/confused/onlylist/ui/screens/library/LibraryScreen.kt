@@ -28,11 +28,10 @@ import dev.chrisbanes.haze.haze
 
 @Composable
 fun LibraryScreen(
-    bottomBarHazeState: HazeState,
+    hazeState: HazeState,
     onMediaClick: (Int) -> Unit,
 ) {
     val listState = rememberLazyListState()
-    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val typography = LocalTypography.current
     var selectedSegment by remember { mutableIntStateOf(0) }
@@ -49,7 +48,7 @@ fun LibraryScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().haze(hazeState),
-            contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
             item {
                 SegmentedControl(

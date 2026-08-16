@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.AppContainer
@@ -33,13 +32,11 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun HomeScreen(bottomBarHazeState: HazeState) {
+fun HomeScreen(hazeState: HazeState) {
     val listState = rememberLazyListState()
-    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val typography = LocalTypography.current
 
-    // Offline-first: observe Room data + trigger network refresh
     val trending by AppContainer.mediaRepository.getTrending().collectAsState(initial = emptyList())
 
     LaunchedEffect(Unit) {
@@ -63,9 +60,8 @@ fun HomeScreen(bottomBarHazeState: HazeState) {
             modifier = Modifier
                 .fillMaxSize()
                 .haze(hazeState),
-            contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
-            // Welcome banner
             item {
                 GlassCard(
                     modifier = Modifier
@@ -83,7 +79,6 @@ fun HomeScreen(bottomBarHazeState: HazeState) {
                 }
             }
 
-            // Quick stats
             item {
                 SectionHeader("Quick Stats")
                 GlassCard(
@@ -116,7 +111,6 @@ fun HomeScreen(bottomBarHazeState: HazeState) {
                 }
             }
 
-            // Trending now (grid — 2 per row)
             item {
                 SectionHeader("Trending Now")
             }
@@ -146,7 +140,6 @@ fun HomeScreen(bottomBarHazeState: HazeState) {
                 }
             }
 
-            // Currently Watching (list)
             item {
                 SectionHeader("Currently Watching")
             }
