@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Search icon: magnifying glass. 24dp viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M10,2 A8,8 0 1,0 16.5,15.5 L21,20 L20,21 L15.5,16.5 A8,8 0 0,0 10,2 Z M10,4 A6,6 0 1,1 10,16 A6,6 0 1,1 10,4 Z" />
+</vector>

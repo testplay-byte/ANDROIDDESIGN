@@ -1,6 +1,6 @@
-# GitHub Actions Workflows — ANDROIDDESIGN
+# GitHub Actions Workflows — ONLYLIST
 
-> This folder lives at the repo root (NOT inside the `ANDROIDDESIGN/` wrapper folder) because
+> This folder lives at the repo root (NOT inside the `ONLYLIST/` wrapper folder) because
 > GitHub Actions ONLY detects workflows at `<repo-root>/.github/workflows/`. This is a GitHub
 > platform constraint, not a choice (CORE_RULES §4).
 
@@ -10,7 +10,7 @@
 
 ## Planned workflows (Phase 1+)
 
-Once the Gradle project is scaffolded (`ANDROIDDESIGN/APP/ani-design/`), the following workflows will be added:
+Once the Gradle project is scaffolded (`ONLYLIST/APP/ani-design/`), the following workflows will be added:
 
 ### `build-apk.yml` (debug build)
 - **Triggers**: push to `main`, PRs to `main`, manual dispatch.
@@ -37,9 +37,9 @@ Once the Gradle project is scaffolded (`ANDROIDDESIGN/APP/ani-design/`), the fol
 - **NEVER install Android SDK / JDK in the local sandbox.**
 - **NEVER run `./gradlew` locally.** Find compile errors by: reading carefully → sub-agent review → push to CI → read annotations → iterate.
 - **ABIs: `arm64-v8a` + `armeabi-v7a` + `x86_64`** (user approved x86_64 for emulator).
-- **App ID:** `com.testplaybyte.anidesign` (placeholder — confirm with user).
+- **App ID:** `com.confused.onlylist` (placeholder — confirm with user).
 - **compileSdk=36, targetSdk=36, minSdk=26.**
 
 ## When this folder gets its first workflow
 
-The workflow files will be created during **Phase 1** (project scaffolding), after the user answers the blocking open-questions (app name, package name, etc. — see `ANDROIDDESIGN/AGENT-CONTEXT/memory/open-questions.md`).
+The workflow files will be created during **Phase 1** (project scaffolding), after the user answers the blocking open-questions (app name, package name, etc. — see `ONLYLIST/AGENT-CONTEXT/memory/open-questions.md`).

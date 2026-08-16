@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: a simple "OL" monogram in warm off-white on transparent.
+     The background is the coral color (ic_launcher_background). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:translateX="27"
+        android:translateY="27">
+        <!-- "O" ring -->
+        <path
+            android:strokeColor="#F5EFE9"
+            android:strokeWidth="8"
+            android:fillColor="#00000000"
+            android:pathData="M54,28 A26,26 0 1,0 54,80 A26,26 0 1,0 54,28 Z" />
+        <!-- "L" — vertical + horizontal stroke forming an L inside the O offset -->
+        <path
+            android:strokeColor="#F5EFE9"
+            android:strokeWidth="8"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M70,42 L70,68 M70,68 L88,68" />
+    </group>
+</vector>

@@ -1,0 +1,5 @@
+<resources>
+    <!-- Warm dark background (Midnight Coral palette) — prevents white flash on launch -->
+    <color name="window_background">#14110F</color>
+    <color name="ic_launcher_background">#FF6B5C</color>
+</resources>
