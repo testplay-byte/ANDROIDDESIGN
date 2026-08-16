@@ -15,19 +15,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
-import com.confused.onlylist.designsystem.components.GlassCard
-import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
@@ -44,47 +49,80 @@ fun DetailsScreen(
     val colors = LocalColors.current
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
+    val viewModel: DetailsViewModel = viewModel(key = "details-$mediaId") {
+        DetailsViewModel(mediaId)
+    }
 
-    val media = (MockData.trending + MockData.currentlyWatching + MockData.completed)
-        .find { it.id == mediaId } ?: MockData.trending.first()
+    val media by viewModel.media.collectAsState()
+    val episodes by viewModel.episodes.collectAsState()
+
+    // Use real data if available, otherwise mock fallback
+    val displayMedia = media ?: MockData.trending.find { it.id == mediaId } ?: MockData.trending.first()
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().haze(hazeState),
-            contentPadding = PaddingValues(top = 110.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(top = 130.dp, bottom = 32.dp),
         ) {
-            // Cover banner
+            // Cover banner — real image via Coil
             item {
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(media.coverColor, colors.background)
+                        .aspectRatio(16f / 9f),
+                ) {
+                    if (!displayMedia.coverImageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = displayMedia.coverImageUrl,
+                            contentDescription = displayMedia.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(displayMedia.coverColor, colors.background)
+                                    )
+                                ),
+                        )
+                    }
+                    // Gradient overlay for readability
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        colors.background.copy(alpha = 0.7f),
+                                    )
+                                )
                             )
-                        ),
-                )
+                    )
+                }
             }
 
             // Title + metadata
             item {
                 Column(Modifier.padding(16.dp)) {
                     BasicText(
-                        text = media.title,
+                        text = displayMedia.title,
                         style = typography.displayMedium.copy(color = colors.textPrimary),
                     )
                     Spacer(Modifier.height(4.dp))
                     BasicText(
-                        text = "${media.format} · ${media.season} ${media.year} · ${media.episodes} eps",
+                        text = "${displayMedia.format} · ${displayMedia.season} ${displayMedia.year} · ${displayMedia.episodes} eps",
                         style = typography.bodyMedium.copy(color = colors.textSecondary),
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        media.genres.take(3).forEach { genre ->
+                        displayMedia.genres.take(3).forEach { genre ->
                             Box(
                                 Modifier
                                     .clip(shapes.small)
@@ -100,7 +138,7 @@ fun DetailsScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                     BasicText(
-                        text = media.description,
+                        text = displayMedia.description,
                         style = typography.bodyMedium.copy(color = colors.textSecondary),
                     )
                     Spacer(Modifier.height(8.dp))
@@ -109,7 +147,7 @@ fun DetailsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         BasicText(
-                            text = media.score.toString(),
+                            text = displayMedia.score.toString(),
                             style = typography.numberLarge.copy(color = colors.primary),
                         )
                         BasicText(
@@ -123,15 +161,14 @@ fun DetailsScreen(
             // Episodes header
             item {
                 BasicText(
-                    text = "Episodes",
+                    text = "Episodes (${episodes.size})",
                     style = typography.titleMedium.copy(color = colors.textPrimary),
                     modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
                 )
             }
 
-            // Episode list (mock — Phase 3 will fetch from Kitsu/Jikan)
-            items(media.episodes.coerceAtMost(12)) { epIndex ->
-                val episodeNumber = epIndex + 1
+            // Episode list
+            items(episodes) { episode ->
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -146,15 +183,15 @@ fun DetailsScreen(
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        media.coverColor.copy(alpha = 0.6f),
-                                        media.coverColor.copy(alpha = 0.3f),
+                                        displayMedia.coverColor.copy(alpha = 0.6f),
+                                        displayMedia.coverColor.copy(alpha = 0.3f),
                                     )
                                 )
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
                         BasicText(
-                            text = "EP $episodeNumber",
+                            text = "EP ${episode.number}",
                             style = typography.caption.copy(color = colors.textTertiary),
                         )
                     }
@@ -164,15 +201,15 @@ fun DetailsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         BasicText(
-                            text = "Episode $episodeNumber",
+                            text = episode.title,
                             style = typography.titleMedium.copy(color = colors.textPrimary),
                         )
                         BasicText(
-                            text = "Aired · ${(media.year - if (episodeNumber <= media.episodes / 2) 1 else 0)}",
+                            text = "Aired · ${episode.airDate}",
                             style = typography.caption.copy(color = colors.textTertiary),
                         )
                         BasicText(
-                            text = "Episode description loading... (Phase 3 will fetch from Kitsu/Jikan)",
+                            text = episode.synopsis,
                             style = typography.bodySmall.copy(color = colors.textSecondary),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,

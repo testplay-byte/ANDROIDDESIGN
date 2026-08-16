@@ -2,7 +2,6 @@ package com.confused.onlylist.ui.screens.airing
 
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,8 +11,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
@@ -28,6 +30,12 @@ fun AiringScreen(hazeState: HazeState) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
+    val viewModel: AiringViewModel = viewModel()
+
+    val airing by viewModel.airing.collectAsState()
+
+    // Use real AniList airing data if available, otherwise mock data
+    val displayAiring = if (airing.isNotEmpty()) airing else MockData.airingThisWeek
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -35,8 +43,9 @@ fun AiringScreen(hazeState: HazeState) {
             modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(top = 130.dp, bottom = 100.dp),
         ) {
+            // Next airing highlight card
             item {
-                val next = MockData.airingToday.firstOrNull()
+                val next = displayAiring.firstOrNull { it.nextAiringAt != null } ?: displayAiring.firstOrNull()
                 if (next != null) {
                     GlassCard(
                         modifier = Modifier
@@ -53,7 +62,7 @@ fun AiringScreen(hazeState: HazeState) {
                             style = typography.titleLarge.copy(color = colors.textPrimary),
                         )
                         BasicText(
-                            text = "Episode ${next.nextEpisode} · ${next.nextAiringAt}",
+                            text = if (next.nextEpisode != null) "Episode ${next.nextEpisode} · ${next.nextAiringAt ?: "soon"}" else "Airing soon",
                             style = typography.bodyMedium.copy(color = colors.primary),
                         )
                     }
@@ -61,9 +70,9 @@ fun AiringScreen(hazeState: HazeState) {
             }
 
             item {
-                SectionHeader("This Week")
+                SectionHeader("Airing This Week" + if (airing.isNotEmpty()) " (live)" else "")
             }
-            items(MockData.airingThisWeek) { media ->
+            items(displayAiring) { media ->
                 MediaListItem(
                     media = media,
                     onClick = { /* Phase 3: navigate to details */ },
