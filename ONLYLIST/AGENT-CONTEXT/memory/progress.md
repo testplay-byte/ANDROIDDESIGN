@@ -4,57 +4,89 @@
 
 ---
 
-## Session 4 — Phase 1 frosted glass + header + font fixes (COMPLETE)
+## Session 5 — Phase 1 R-11 fixes + Phase 3 (COMPLETE)
 
-**Phase:** 1 (R-9 fixes) ✅ — CI green
+**Phase:** 1 (frosted glass + header + OAuth fixes) ✅ + 3 (real data + ViewModels + Profile) ✅
 
 ### Done this session
 
-#### R-9 Research (3-topic deep-dive sub-agent)
-- **Topic 1 — True frosted glass**: `Modifier.blur()` blurs a composable's OWN content, not what's behind. No public `Modifier.blurBehind()` in AndroidX. **Recommendation: Chris Banes' Haze library** — de-facto standard for backdrop blur in Compose. API 21+ (RenderEffect on 31+, RenderScript fallback on ≤30).
-- **Topic 2 — Collapsible header**: use `lerp(displayLarge, titleLarge, fraction)` for title + single `animateFloatAsState(spring)` driving title size + padding + scrim alpha. Read `LazyListState.firstVisibleItemScrollOffset` directly (no `nestedScroll` needed).
-- **Topic 3 — Variable font weights (THE BUG)**: `FontFamily(Font(R.font.inter_variable))` registers ONLY Normal weight. `FontWeight.Bold` in TextStyle is SILENTLY IGNORED. **Fix: register a SEPARATE Font per weight with `FontVariation.Settings(FontVariation.weight(N))`.**
+#### Phase 1 fixes (user-reported issues)
 
-#### R-10 Research (Haze version compatibility)
-- Haze 1.7.2 (recommended by R-9) was compiled with Kotlin 2.2.0 — metadata version mismatch with our Kotlin 2.0.21.
-- Haze 1.1.1 is the latest compatible with Kotlin 2.0.21 (1.2.0+ requires Kotlin 2.1+). API surface (haze + hazeChild + HazeStyle + HazeTint) is identical.
+1. **REAL Haze blur** (was just tint, no blur)
+   - ROOT CAUSE: AppNavHost created a separate `bottomBarHazeState` with NO source composable marked `Modifier.haze()`. Each screen had its OWN hazeState. So the bottom bar's HazeState had nothing to sample.
+   - FIX: Single shared `HazeState` per app. Each screen marks its LazyColumn with `Modifier.haze(sharedHazeState)`. The bottom bar + header consume via `hazeChild(sharedHazeState)`.
 
-#### Fixes applied (3 commits, 3 CI iterations → green)
-- ✅ Added Haze 1.1.1 dependency to `:core:designsystem` (via `api()` so it's exposed to `:app`).
-- ✅ Rewrote `BottomBar.kt`: removed `Modifier.shadow(12.dp)` (was the "line" artifact) + gradient seam; replaced with `hazeChild` (real backdrop blur of content behind the bar).
-- ✅ Rewrote `CollapsibleHeader.kt`: title SHRINKS (displayLarge 30sp → titleLarge 18sp via `lerp()`), padding animates (8→2/4→0), scrim is Haze-backed (real frosted blur, 0→0.85 alpha over 200dp scroll), single spring animation drives everything.
-- ✅ Rewrote `FontRegistry.kt`: each weight registered as a SEPARATE Font with explicit `FontVariation.Settings(FontVariation.weight(N))`. Inter (400/500/600/700), Sora (600/700/800), JetBrains Mono (400/500/600). `@OptIn(ExperimentalTextApi::class)` per Aug 2026 docs.
-- ✅ Updated all 6 screens: accept `bottomBarHazeState`, create own `hazeState` for LazyColumn + CollapsibleHeader, apply `Modifier.haze(hazeState)` to LazyColumn (the blur source).
-- ✅ Updated `AppNavHost`: shared `bottomBarHazeState` passed to each screen.
-- ✅ Settings: "Link AniList Account" button — tapping "AniList Account" when not logged in opens Chrome Custom Tabs for OAuth (`MainActivity.startAniListAuth`).
+2. **AniList OAuth "unsupported_grant_type" fix**
+   - ROOT CAUSE: We passed `redirect_uri=olink://anilist-auth` in the authorize URL. Per AniList's Implicit Grant docs, the URL should be ONLY `?client_id={id}&response_type=token`. The redirect_uri comes from the app's AniList developer settings.
+   - FIX: `AniListConfig.authUrl()` no longer includes redirect_uri.
+
+3. **Header improvements**
+   - Title 1.5x bigger: `displayLarge` 30sp → 45sp.
+   - Title STAYS BOLD always: removed the `lerp` on `fontWeight` (was causing the "bold → normal → bold again" flicker). Now lerps only `fontSize` + padding.
+   - Full background behind header: the header Box always has `colors.background`.
+   - Frosted glass scrim: Haze-backed, 0 → 0.85 alpha on scroll.
+
+#### Phase 3 — Real data + ViewModels + Profile
+
+1. **Coil image loading** (real cover images)
+   - Added `coil-compose` 3.0.4 + `coil-network-okhttp` 3.0.4.
+   - `MediaCard` + `MediaListItem`: `AsyncImage` loads real AniList cover URLs; falls back to color gradient.
+
+2. **ViewModels** for Search, Library, Airing, Details
+   - `SearchViewModel`: debounced query (400ms) → Room search Flow → AniList refresh.
+   - `LibraryViewModel`: observes Room trending Flow + AniList refresh.
+   - `AiringViewModel`: observes Room airing Flow (status=RELEASING) + AniList refresh.
+   - `DetailsViewModel`: loads single media by ID + generates episode list (mock; Kitsu/Jikan in Phase 3.5).
+
+3. **Real AniList data wired into all screens**
+   - Home: real trending (was already done in Phase 2).
+   - Search: real search results with "(live from AniList)" label.
+   - Library: real trending data with "(live from AniList)" label.
+   - Airing: real airing schedule (status=RELEASING media).
+   - Details: real cover banner (Coil) + real metadata + episode list (mock).
+   - Profile: mock stats (Phase 3.5 will use real Viewer data).
+
+4. **Profile screen with radar chart**
+   - Custom Canvas radar/spider chart (6 axes, 5 grid levels, data polygon + points).
+   - Genre distribution visualization.
+   - Top genres list with score bars.
+   - Quick stats (Total, Episodes, Watching).
+   - Profile header with avatar placeholder.
+   - Navigation: Settings → Profile item navigates to Profile screen.
 
 ### CI builds
-- Run #36: FAILURE — Haze 1.7.2 compiled with Kotlin 2.2.0 (metadata mismatch)
-- Run #37: FAILURE — Haze 1.1.1 used `implementation` (not exposed to :app)
-- Run #38: ✅ SUCCESS — Haze via `api()` (commit `d5352e1`)
-- APK artifact: 10.2MB (up from 7.9MB — Haze + real variable font files)
+- Run #41: FAILURE (PaddingValues import)
+- Run #42: ✅ (Phase 1 fixes)
+- Run #43: ✅ (Coil + Search/Library VMs)
+- Run #44: FAILURE (getAiring missing on repo + PaddingValues)
+- Run #45: ✅ (Airing/Details VMs)
+- Run #46: FAILURE (width import in Profile)
+- Run #47: ✅ (Profile screen — commit `7b826f2`)
+- APK artifact: 10.6MB
 
-### What's fixed (user-reported bugs)
-1. ✅ "Line on the bottom nav" — `Modifier.shadow` removed; Haze provides depth without a ring artifact.
-2. ✅ "Frosted glass not achieved" — real backdrop blur via Haze (content behind is now blurred, not just dimmed).
-3. ✅ "Home heading not bold" — variable font weights now render correctly via `FontVariation.Settings`.
-4. ✅ "Home heading doesn't shrink + move up" — `lerp()` animation on title style + padding.
-5. ✅ "No top background to home title" — Haze-backed scrim fades in on scroll.
-6. ✅ "Gradient unnecessary" — gradient replaced with Haze frosted blur.
-7. ✅ "Link AniList account" — Settings button opens OAuth in Chrome Custom Tabs.
+### What's built (Phase 3 deliverable)
+- Real AniList trending data on Home + Library + Airing.
+- Real AniList search results on Search (debounced).
+- Real cover images via Coil on all cards + Details banner.
+- Real AniList media metadata on Details (title, format, season, year, episodes, genres, description, score).
+- Episode list on Details (mock — Kitsu/Jikan in Phase 3.5).
+- Profile screen with radar chart + genre bars + quick stats.
+- ViewModels for proper state management (Search, Library, Airing, Details).
+- Settings → Profile navigation.
+- AniList OAuth login flow (fixed — should work now).
 
-### Next (Phase 3)
-1. Wire real AniList data into Search, Library, Airing, Details screens
-2. Add ViewModels for proper state management
-3. Details screen — per-episode metadata (Kitsu + Jikan)
-4. Profile screen with charts (radar/spider)
-5. Improve logging with filtering
+### Deferred to Phase 3.5
+1. Kitsu + Jikan episode metadata (real per-episode thumbnails, synopses, air dates).
+2. Real AniList Viewer data on Profile (when authenticated) — real stats, real radar chart.
+3. Improved logging screen with filtering.
+4. AniList MediaListCollection (user's actual lists, not trending) when authenticated.
 
 ### Phase map
 - **Phase 0** ✅: Planning / Setup / Research
-- **Phase 1** ✅: Project scaffolding + design system + 6 screens + CI + frosted glass + header animation + real fonts
+- **Phase 1** ✅: Project scaffolding + design system + frosted glass + header animation + fonts
 - **Phase 2** ✅: Data layer (Room + AniList + Kitsu/Jikan stubs + repositories)
-- **Phase 3** (next): Wire real data into all screens + ViewModels + Kitsu/Jikan full impl + Profile + logging
+- **Phase 3** ✅: Real data on all screens + ViewModels + Coil images + Profile with charts
+- **Phase 3.5** (next): Kitsu/Jikan episode metadata + real Viewer stats + logging screen
 - **Phase 4**: AI agent port + Design Studio
 - **Phase 5**: Backup/restore + dynamic theming
 - **Phase 6**: Polish (animations, charts, notifications, edge cases)
