@@ -31,7 +31,10 @@ jobs:
 
       - name: Print designsystem compile classpath (diagnostic)
         working-directory: ONLYLIST/APP/only-list
-        run: gradle :core:designsystem:dependencies --configuration debugCompileClasspath 2>&1 | head -100
+        run: |
+          gradle :core:designsystem:dependencies --configuration debugCompileClasspath 2>&1 | grep -E "^\S*---" | head -30
+          echo "=== Checking for foundation specifically ==="
+          gradle :core:designsystem:dependencies --configuration debugCompileClasspath 2>&1 | grep -i "foundation" || echo "FOUNDATION NOT FOUND IN CLASSPATH"
 
       - name: Build debug APK
         working-directory: ONLYLIST/APP/only-list
