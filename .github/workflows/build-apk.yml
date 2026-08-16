@@ -36,6 +36,21 @@ jobs:
           echo "=== Checking for foundation specifically ==="
           gradle :core:designsystem:dependencies --configuration debugCompileClasspath 2>&1 | grep -i "foundation" || echo "FOUNDATION NOT FOUND IN CLASSPATH"
 
+      - name: Verify foundation AAR contains BasicText
+        run: |
+          AAR=$(find ~/.gradle/caches -name "foundation-android-1.7.6.aar" 2>/dev/null | head -1)
+          echo "AAR: $AAR"
+          if [ -n "$AAR" ]; then
+            TEMP=$(mktemp -d)
+            unzip -o "$AAR" -d "$TEMP" > /dev/null 2>&1
+            echo "=== classes.jar: BasicText ==="
+            unzip -l "$TEMP/classes.jar" 2>/dev/null | grep -i "BasicText" || echo "BasicText NOT FOUND in classes.jar"
+            echo "=== classes.jar: foundation package (first 10) ==="
+            unzip -l "$TEMP/classes.jar" 2>/dev/null | grep "androidx/compose/foundation/" | head -10
+          else
+            echo "foundation-android AAR not found in cache"
+          fi
+
       - name: Build debug APK
         working-directory: ONLYLIST/APP/only-list
         run: gradle :app:assembleDebug --stacktrace --no-daemon
