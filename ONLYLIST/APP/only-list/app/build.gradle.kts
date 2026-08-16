@@ -88,4 +88,7 @@ dependencies {
     // Coil — image loading (real cover images)
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
+
+    // Serialization (for JSON parsing in ViewModels)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 }
