@@ -60,25 +60,24 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
 
-    // Compose BOM
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.graphics)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.foundation)
-    implementation(libs.compose.runtime)
-    implementation(libs.compose.animation)
-    debugImplementation(libs.compose.ui.tooling)
+    // Compose — explicit versions matching :core:designsystem (no BOM)
+    implementation("androidx.compose.foundation:foundation:1.7.0")
+    implementation("androidx.compose.ui:ui:1.7.0")
+    implementation("androidx.compose.ui:ui-graphics:1.7.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.0")
+    implementation("androidx.compose.runtime:runtime:1.7.0")
+    implementation("androidx.compose.animation:animation:1.7.0")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.0")
 
     // AndroidX
-    implementation(libs.core.ktx)
-    implementation(libs.activity.compose)
-    implementation(libs.lifecycle.runtime.ktx)
-    implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.lifecycle.runtime.compose)
-    implementation(libs.navigation.compose)
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.navigation:navigation-compose:2.8.4")
 
     // Coroutines
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }
