@@ -2,6 +2,7 @@ package com.confused.onlylist.ui.screens.airing
 
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
