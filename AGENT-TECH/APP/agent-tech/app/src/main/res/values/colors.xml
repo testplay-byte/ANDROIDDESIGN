@@ -1,0 +1,5 @@
+<resources>
+    <!-- Cool light grey background (Primary Glass palette) — prevents white flash on launch -->
+    <color name="window_background">#F5F5F5</color>
+    <color name="ic_launcher_background">#1E88E5</color>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Library icon: stacked books. 24dp viewport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M3,4 L3,20 L5,20 L5,4 Z M7,4 L7,20 L9,20 L9,4 Z M11,3 L16,20 L18,19.5 L13,2.5 Z M19,4 A2,2 0 0,0 17,6 L17,18 A2,2 0 0,0 19,20 L21,20 L21,4 Z" />
+</vector>
