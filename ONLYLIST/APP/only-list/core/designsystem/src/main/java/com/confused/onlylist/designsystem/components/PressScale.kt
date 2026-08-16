@@ -9,7 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.graphicsLayer
+import androidx.compose.ui.graphics.graphicsLayer
 import com.confused.onlylist.designsystem.theme.LocalMotion
 
 /**

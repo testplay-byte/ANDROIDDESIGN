@@ -1,6 +1,6 @@
 package com.confused.onlylist.ui.screens.library
 
-import androidx.compose.foundation.BasicText
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
