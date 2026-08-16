@@ -23,6 +23,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:common"))
+
     // Ktor
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
