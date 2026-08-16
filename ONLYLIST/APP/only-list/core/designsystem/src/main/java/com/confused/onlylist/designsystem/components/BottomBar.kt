@@ -17,15 +17,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -33,9 +30,13 @@ import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalMotion
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeChild
 
-// ── Bottom navigation bar — floating pill + frosted glass + animated label reveal ──
-// Per DESIGN-LANGUAGE.md §7.1 (updated with heavily frosted glass vibe per user).
+// ── Bottom navigation bar — floating pill + TRUE frosted glass + animated label reveal ──
+// Per DESIGN-LANGUAGE.md §7.1 (updated per R-9: Haze replaces alpha+shadow).
 
 @Stable
 data class BottomNavItem(
@@ -45,17 +46,19 @@ data class BottomNavItem(
 )
 
 /**
- * Floating pill bottom navigation with HEAVILY FROSTED GLASS aesthetic.
- * - Translucent gradient background (surface → surfaceHighest) for depth
- * - Thin outline border for glass edge
- * - Soft shadow for elevation
- * - Animated label reveal on selection (expandHorizontally + fadeIn)
- * - pressScale feedback (scale 0.95, no ripple)
+ * Floating pill bottom navigation with TRUE frosted glass backdrop blur.
+ * - Haze provides real blur of content BEHIND the bar (not just alpha overlay).
+ * - No shadow (was the cause of the "line" artifact).
+ * - Animated label reveal on selection (expandHorizontally + fadeIn).
+ * - pressScale feedback (scale 0.95, no ripple).
+ *
+ * @param hazeState shared with the host screen's LazyColumn (the blur source).
  */
 @Composable
 fun OnlyListBottomBar(
     currentRoute: String,
     onNavigate: (String) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
     items: List<BottomNavItem> = defaultBottomNavItems(),
 ) {
@@ -72,20 +75,13 @@ fun OnlyListBottomBar(
     ) {
         Row(
             modifier = Modifier
-                .shadow(
-                    elevation = 12.dp,
-                    shape = shapes.pill,
-                    ambientColor = colors.background.copy(alpha = 0.6f),
-                    spotColor = colors.background.copy(alpha = 0.8f),
-                )
                 .clip(shapes.pill)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            colors.surfaceHighest.copy(alpha = 0.72f),
-                            colors.surface.copy(alpha = 0.72f),
-                        )
-                    )
+                .hazeChild(
+                    state = hazeState,
+                    style = HazeStyle(
+                        tint = HazeTint(colors.surface.copy(alpha = 0.55f)),
+                        blurRadius = 24.dp,
+                    ),
                 )
                 .height(58.dp)
                 .padding(8.dp),
@@ -155,7 +151,7 @@ private fun RowScope.BottomNavItemView(
             exit = fadeOut(animationSpec = tween(100)) +
                     shrinkHorizontally(animationSpec = tween(150)),
         ) {
-            androidx.compose.foundation.text.BasicText(
+            BasicText(
                 text = item.label,
                 style = typography.titleMedium.copy(
                     color = if (isActive) colors.primary else colors.textTertiary

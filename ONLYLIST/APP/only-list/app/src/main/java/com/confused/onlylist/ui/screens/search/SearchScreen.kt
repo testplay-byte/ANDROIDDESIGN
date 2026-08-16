@@ -1,6 +1,7 @@
 package com.confused.onlylist.ui.screens.search
 
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
@@ -31,14 +33,17 @@ import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaCard
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(bottomBarHazeState: HazeState) {
     val listState = rememberLazyListState()
+    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
-    var selectedSegment by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var selectedSegment by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
 
     val results = if (query.isBlank()) {
@@ -53,10 +58,9 @@ fun SearchScreen() {
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
         ) {
-            // Search field
             item {
                 Box(
                     Modifier
@@ -71,7 +75,7 @@ fun SearchScreen() {
                         onValueChange = { query = it },
                         singleLine = true,
                         textStyle = TextStyle(color = colors.textPrimary),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.primary),
+                        cursorBrush = SolidColor(colors.primary),
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp),
@@ -92,7 +96,6 @@ fun SearchScreen() {
                     )
                 }
             }
-            // Anime/Manga toggle
             item {
                 SegmentedControl(
                     options = listOf("Anime", "Manga"),
@@ -103,7 +106,6 @@ fun SearchScreen() {
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            // Results (2-column grid)
             item {
                 BasicText(
                     text = "${results.size} results",
@@ -111,7 +113,6 @@ fun SearchScreen() {
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                 )
             }
-            // Grid rows (2 per row)
             val rowCount = (results.size + 1) / 2
             for (rowIndex in 0 until rowCount) {
                 item {
@@ -127,7 +128,7 @@ fun SearchScreen() {
                                 Box(Modifier.weight(1f)) {
                                     MediaCard(
                                         media = results[index],
-                                        onClick = { /* Phase 2: navigate to details */ },
+                                        onClick = { /* Phase 3: navigate to details */ },
                                     )
                                 }
                             } else {
@@ -138,6 +139,6 @@ fun SearchScreen() {
                 }
             }
         }
-        CollapsibleHeader(title = "Search", listState = listState)
+        CollapsibleHeader(title = "Search", listState = listState, hazeState = hazeState)
     }
 }

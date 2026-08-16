@@ -38,5 +38,9 @@ dependencies {
     implementation("androidx.compose.animation:animation-core:1.7.0")
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.0")
 
+    // Haze — true frosted glass backdrop blur (per R-9 research).
+    // v1.7.2 stable; do NOT use v2-alpha (API not locked).
+    implementation("dev.chrisbanes.haze:haze:1.7.2")
+
     implementation("androidx.core:core-ktx:1.15.0")
 }

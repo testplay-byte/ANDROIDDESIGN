@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.AppContainer
@@ -28,10 +29,13 @@ import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaCard
 import com.confused.onlylist.ui.components.MediaListItem
 import com.confused.onlylist.ui.components.toUiModel
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(bottomBarHazeState: HazeState) {
     val listState = rememberLazyListState()
+    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val typography = LocalTypography.current
 
@@ -42,12 +46,11 @@ fun HomeScreen() {
         Logger.d("Home", "Refreshing trending from AniList...")
         val result = AppContainer.mediaRepository.refreshTrending()
         result.fold(
-            onSuccess = { Logger.d("Home", "Trending refresh OK") },
+            onSuccess = { Logger.d("Home", "Trending refresh OK — ${trending.size} cached") },
             onFailure = { Logger.w("Home", "Trending refresh failed: ${it.message}") },
         )
     }
 
-    // Use real data if available, otherwise mock data
     val trendingMedia = if (trending.isNotEmpty()) {
         trending.map { it.toUiModel() }
     } else {
@@ -57,7 +60,9 @@ fun HomeScreen() {
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .haze(hazeState),
             contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
         ) {
             // Welcome banner
@@ -130,7 +135,7 @@ fun HomeScreen() {
                                 Box(Modifier.weight(1f)) {
                                     MediaCard(
                                         media = trendingMedia[index],
-                                        onClick = { /* Phase 2: navigate to details */ },
+                                        onClick = { /* Phase 3: navigate to details */ },
                                     )
                                 }
                             } else {
@@ -148,11 +153,11 @@ fun HomeScreen() {
             items(MockData.currentlyWatching) { media ->
                 MediaListItem(
                     media = media,
-                    onClick = { /* Phase 2: navigate to details */ },
+                    onClick = { /* Phase 3: navigate to details */ },
                 )
             }
         }
-        CollapsibleHeader(title = "Home", listState = listState)
+        CollapsibleHeader(title = "Home", listState = listState, hazeState = hazeState)
     }
 }
 

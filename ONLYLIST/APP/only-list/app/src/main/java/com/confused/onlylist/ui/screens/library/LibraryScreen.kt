@@ -23,17 +23,20 @@ import com.confused.onlylist.designsystem.components.SegmentedControl
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaListItem
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 @Composable
 fun LibraryScreen(
+    bottomBarHazeState: HazeState,
     onMediaClick: (Int) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val typography = LocalTypography.current
     var selectedSegment by remember { mutableIntStateOf(0) }
 
-    // Filter by status for each segment
     val allMedia = (MockData.currentlyWatching + MockData.completed + MockData.trending).distinctBy { it.id }
     val filteredMedia = when (selectedSegment) {
         0 -> allMedia.filter { it.status == MediaStatus.CURRENT }
@@ -45,7 +48,7 @@ fun LibraryScreen(
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
         ) {
             item {
@@ -72,6 +75,6 @@ fun LibraryScreen(
                 )
             }
         }
-        CollapsibleHeader(title = "Library", listState = listState)
+        CollapsibleHeader(title = "Library", listState = listState, hazeState = hazeState)
     }
 }

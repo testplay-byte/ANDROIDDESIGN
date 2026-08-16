@@ -1,20 +1,19 @@
 package com.confused.onlylist.ui.screens.airing
 
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.confused.onlylist.data.mock.MockData
@@ -23,20 +22,22 @@ import com.confused.onlylist.designsystem.components.GlassCard
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
 import com.confused.onlylist.ui.components.MediaListItem
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 @Composable
-fun AiringScreen() {
+fun AiringScreen(bottomBarHazeState: HazeState) {
     val listState = rememberLazyListState()
+    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val typography = LocalTypography.current
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(top = 110.dp, bottom = 100.dp),
         ) {
-            // Next airing highlight card
             item {
                 val next = MockData.airingToday.firstOrNull()
                 if (next != null) {
@@ -62,19 +63,17 @@ fun AiringScreen() {
                 }
             }
 
-            // Weekly schedule
             item {
                 SectionHeader("This Week")
             }
-            items(MockData.airingThisWeek.size) { index ->
-                val media = MockData.airingThisWeek[index]
+            items(MockData.airingThisWeek) { media ->
                 MediaListItem(
                     media = media,
-                    onClick = { /* Phase 2: navigate to details */ },
+                    onClick = { /* Phase 3: navigate to details */ },
                 )
             }
         }
-        CollapsibleHeader(title = "Airing", listState = listState)
+        CollapsibleHeader(title = "Airing", listState = listState, hazeState = hazeState)
     }
 }
 

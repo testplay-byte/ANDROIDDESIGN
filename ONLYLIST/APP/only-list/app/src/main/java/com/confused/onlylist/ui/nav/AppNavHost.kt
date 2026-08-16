@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
@@ -19,14 +20,17 @@ import com.confused.onlylist.ui.screens.home.HomeScreen
 import com.confused.onlylist.ui.screens.library.LibraryScreen
 import com.confused.onlylist.ui.screens.search.SearchScreen
 import com.confused.onlylist.ui.screens.settings.SettingsScreen
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
-    // FIX: use currentBackStackEntryAsState() so the route is REACTIVE —
-    // recomposes when navigation changes, so the bottom bar selection updates.
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    // Shared HazeState — the bottom bar reads from whatever screen is visible.
+    // Each screen also has its own HazeState for its LazyColumn + header; the bar
+    // gets a screen-level hazeState passed via the composable() lambda below.
+    val bottomBarHazeState = remember { HazeState() }
 
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -35,23 +39,24 @@ fun AppNavHost() {
             modifier = Modifier.fillMaxSize(),
         ) {
             composable(Destinations.HOME) {
-                HomeScreen()
+                HomeScreen(bottomBarHazeState = bottomBarHazeState)
             }
             composable(Destinations.SEARCH) {
-                SearchScreen()
+                SearchScreen(bottomBarHazeState = bottomBarHazeState)
             }
             composable(Destinations.AIRING) {
-                AiringScreen()
+                AiringScreen(bottomBarHazeState = bottomBarHazeState)
             }
             composable(Destinations.LIBRARY) {
                 LibraryScreen(
+                    bottomBarHazeState = bottomBarHazeState,
                     onMediaClick = { mediaId ->
                         navController.navigate(Destinations.details(mediaId))
                     },
                 )
             }
             composable(Destinations.SETTINGS) {
-                SettingsScreen()
+                SettingsScreen(bottomBarHazeState = bottomBarHazeState)
             }
             composable(
                 route = Destinations.DETAILS,
@@ -68,8 +73,6 @@ fun AppNavHost() {
         }
 
         // Floating pill bottom nav overlays the content.
-        // FIX: align to BottomCenter so it appears at the BOTTOM, not the top.
-        // Hidden on Details screen (it's a detail view, not a tab).
         if (currentRoute in Destinations.bottomNavRoutes) {
             OnlyListBottomBar(
                 currentRoute = currentRoute ?: Destinations.HOME,
@@ -84,6 +87,7 @@ fun AppNavHost() {
                         }
                     }
                 },
+                hazeState = bottomBarHazeState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

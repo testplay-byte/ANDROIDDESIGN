@@ -1,81 +1,96 @@
 package com.confused.onlylist.designsystem.components
 
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.lerp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalTypography
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeChild
 
-// ── Collapsible header with scroll-blur (gradient scrim, NOT RenderEffect) ──
-// Per DESIGN-LANGUAGE.md §7.2 + R-5 research.
-// Header pinned OUTSIDE the scroll container. Title shrinks on scroll.
-// Scrim = 36dp gradient (surface → transparent), alpha = smoothstep(scroll/24dp).
-// Draw-phase only — zero recomposition for the scrim.
+// ── Collapsible header with frosted glass + scroll-driven title shrink ──
+// Per DESIGN-LANGUAGE.md §7.2 + R-9 research.
 //
-// ponytail: progressive blur ramp 40%-70% (R-7) + title size animation are Phase 6 polish.
-// v1: static large title + alpha-animated scrim (still looks great, builds reliably).
+// Key fixes (vs the old version):
+// - Title SHRINKS (displayLarge 30sp → titleLarge 18sp) + moves up (padding 8→2 / 4→0)
+//   based on scroll, using lerp() + a single animateFloatAsState(spring).
+// - Scrim is a REAL frosted blur (Haze) not a gradient — fixes the "no top background" complaint.
+// - No shadow, no gradient seam — fixes the "line" complaint.
 
 @Composable
 fun CollapsibleHeader(
     title: String,
     listState: LazyListState,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalColors.current
     val typography = LocalTypography.current
 
-    // Scroll offset: 0 if first item visible, else MAX (fully scrimmed)
-    val scrollOffset = if (listState.firstVisibleItemIndex == 0) {
-        listState.firstVisibleItemScrollOffset
+    // Scroll delta. Use MAX when firstVisibleItemIndex > 0 so the header
+    // stays fully collapsed once you scroll past the first item.
+    val rawOffset = if (listState.firstVisibleItemIndex == 0) {
+        listState.firstVisibleItemScrollOffset.toFloat()
     } else {
-        Int.MAX_VALUE
+        Float.MAX_VALUE
     }
-    // Scrim alpha: ramps in over the first 24dp of scroll, caps at 0.55
-    val scrimAlpha = (scrollOffset.toFloat() / 24f).coerceIn(0f, 0.55f)
+    val collapseFraction = (rawOffset / 200f).coerceIn(0f, 1f)
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-    ) {
-        BasicText(
-            text = title,
-            style = typography.displayLarge.copy(
-                color = colors.textPrimary,
-            ),
-            modifier = Modifier.padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 4.dp,
-            ),
-        )
-        // Gradient scrim: 36dp tall, surface (with alpha) → transparent.
-        // This creates the "darkening blur" effect without an expensive RenderEffect.
+    // Single source of truth for animation timing — one spring drives everything.
+    val animatedFraction by animateFloatAsState(
+        targetValue = collapseFraction,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "headerCollapse",
+    )
+
+    // Scrim: 0 → 0.85 alpha, frosted (Haze-backed).
+    // At scroll=0: transparent (you see the content behind). On scroll: frosted glass fades in.
+    val scrimAlpha = animatedFraction * 0.85f
+
+    // Title style: lerp(large → small).
+    val animatedStyle = lerp(typography.displayLarge, typography.titleLarge, animatedFraction)
+
+    // Padding: 8→2 top, 4→0 bottom.
+    val topPad = androidx.compose.ui.unit.lerp(8.dp, 2.dp, animatedFraction)
+    val bottomPad = androidx.compose.ui.unit.lerp(4.dp, 0.dp, animatedFraction)
+
+    Box(modifier.fillMaxWidth()) {
+        // Layer 1 (bottom): frosted scrim — fills behind title + status bar.
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(36.dp)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            colors.surface.copy(alpha = scrimAlpha),
-                            Color.Transparent,
-                        )
-                    )
+                .statusBarsPadding()
+                .hazeChild(
+                    state = hazeState,
+                    style = HazeStyle(
+                        tint = HazeTint(colors.surface.copy(alpha = scrimAlpha)),
+                        blurRadius = 20.dp,
+                    ),
                 )
+        )
+        // Layer 2 (top): title — on top of the scrim.
+        BasicText(
+            text = title,
+            style = animatedStyle.copy(color = colors.textPrimary),
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(start = 16.dp, end = 16.dp, top = topPad, bottom = bottomPad),
         )
     }
 }

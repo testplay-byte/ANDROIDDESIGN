@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,9 +27,12 @@ import androidx.compose.ui.unit.dp
 import com.confused.onlylist.data.mock.MockData
 import com.confused.onlylist.designsystem.components.CollapsibleHeader
 import com.confused.onlylist.designsystem.components.GlassCard
+import com.confused.onlylist.designsystem.components.SkeletonBox
 import com.confused.onlylist.designsystem.theme.LocalColors
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 
 @Composable
 fun DetailsScreen(
@@ -37,18 +40,18 @@ fun DetailsScreen(
     onBack: () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val hazeState = remember { HazeState() }
     val colors = LocalColors.current
     val shapes = LocalShapes.current
     val typography = LocalTypography.current
 
-    // Find mock media by id (Phase 2 will load from Room)
     val media = (MockData.trending + MockData.currentlyWatching + MockData.completed)
         .find { it.id == mediaId } ?: MockData.trending.first()
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().haze(hazeState),
             contentPadding = PaddingValues(top = 110.dp, bottom = 32.dp),
         ) {
             // Cover banner
@@ -78,7 +81,6 @@ fun DetailsScreen(
                         style = typography.bodyMedium.copy(color = colors.textSecondary),
                     )
                     Spacer(Modifier.height(8.dp))
-                    // Genres
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -102,7 +104,6 @@ fun DetailsScreen(
                         style = typography.bodyMedium.copy(color = colors.textSecondary),
                     )
                     Spacer(Modifier.height(8.dp))
-                    // Score
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -128,7 +129,7 @@ fun DetailsScreen(
                 )
             }
 
-            // Episode list (mock)
+            // Episode list (mock — Phase 3 will fetch from Kitsu/Jikan)
             items(media.episodes.coerceAtMost(12)) { epIndex ->
                 val episodeNumber = epIndex + 1
                 Row(
@@ -171,7 +172,7 @@ fun DetailsScreen(
                             style = typography.caption.copy(color = colors.textTertiary),
                         )
                         BasicText(
-                            text = "Episode description loading... (Phase 2 will fetch from Kitsu/Jikan)",
+                            text = "Episode description loading... (Phase 3 will fetch from Kitsu/Jikan)",
                             style = typography.bodySmall.copy(color = colors.textSecondary),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -180,6 +181,6 @@ fun DetailsScreen(
                 }
             }
         }
-        CollapsibleHeader(title = "Details", listState = listState)
+        CollapsibleHeader(title = "Details", listState = listState, hazeState = hazeState)
     }
 }
