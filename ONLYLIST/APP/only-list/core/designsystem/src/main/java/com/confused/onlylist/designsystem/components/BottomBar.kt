@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,13 +17,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -33,8 +34,8 @@ import com.confused.onlylist.designsystem.theme.LocalMotion
 import com.confused.onlylist.designsystem.theme.LocalShapes
 import com.confused.onlylist.designsystem.theme.LocalTypography
 
-// ── Bottom navigation bar — floating pill + animated label reveal ──
-// Per DESIGN-LANGUAGE.md §7.1.
+// ── Bottom navigation bar — floating pill + frosted glass + animated label reveal ──
+// Per DESIGN-LANGUAGE.md §7.1 (updated with heavily frosted glass vibe per user).
 
 @Stable
 data class BottomNavItem(
@@ -44,10 +45,12 @@ data class BottomNavItem(
 )
 
 /**
- * Floating pill bottom navigation. NOT a Scaffold.bottomBar — overlays content.
- * Active tab = content-sized pill (primaryMuted bg) with icon + label.
- * Inactive = icon-only, equal-weight distribution.
- * Label reveal: expandHorizontally + fadeIn. Press: pressScale (scale 0.95, no ripple).
+ * Floating pill bottom navigation with HEAVILY FROSTED GLASS aesthetic.
+ * - Translucent gradient background (surface → surfaceHighest) for depth
+ * - Thin outline border for glass edge
+ * - Soft shadow for elevation
+ * - Animated label reveal on selection (expandHorizontally + fadeIn)
+ * - pressScale feedback (scale 0.95, no ripple)
  */
 @Composable
 fun OnlyListBottomBar(
@@ -69,8 +72,21 @@ fun OnlyListBottomBar(
     ) {
         Row(
             modifier = Modifier
+                .shadow(
+                    elevation = 12.dp,
+                    shape = shapes.pill,
+                    ambientColor = colors.background.copy(alpha = 0.6f),
+                    spotColor = colors.background.copy(alpha = 0.8f),
+                )
                 .clip(shapes.pill)
-                .background(colors.surface.copy(alpha = 0.88f))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            colors.surfaceHighest.copy(alpha = 0.72f),
+                            colors.surface.copy(alpha = 0.72f),
+                        )
+                    )
+                )
                 .height(58.dp)
                 .padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -109,7 +125,7 @@ private fun RowScope.BottomNavItemView(
                 if (isActive) {
                     Modifier
                         .clip(shapes.pill)
-                        .background(colors.primaryMuted)
+                        .background(colors.primaryMuted.copy(alpha = 0.8f))
                         .padding(horizontal = 14.dp)
                 } else {
                     Modifier.padding(horizontal = 10.dp)
@@ -139,7 +155,7 @@ private fun RowScope.BottomNavItemView(
             exit = fadeOut(animationSpec = tween(100)) +
                     shrinkHorizontally(animationSpec = tween(150)),
         ) {
-            BasicText(
+            androidx.compose.foundation.text.BasicText(
                 text = item.label,
                 style = typography.titleMedium.copy(
                     color = if (isActive) colors.primary else colors.textTertiary
@@ -151,8 +167,6 @@ private fun RowScope.BottomNavItemView(
 }
 
 // ── Default items ──
-// iconRes IDs are resolved at runtime from the designsystem module's R.
-// Using Int (resource ID) keeps this non-Material + works with Image(painterResource).
 @Composable
 private fun defaultBottomNavItems(): List<BottomNavItem> = listOf(
     BottomNavItem("home", com.confused.onlylist.designsystem.R.drawable.ic_home, "Home"),

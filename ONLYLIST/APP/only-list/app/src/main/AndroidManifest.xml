@@ -24,6 +24,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Crash handler error screen (CORE_RULES §19) -->
+        <activity
+            android:name=".error.ErrorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OnlyList"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout" />
+
     </application>
 
 </manifest>

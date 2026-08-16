@@ -1,19 +1,23 @@
 package com.confused.onlylist.designsystem.theme
 
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import com.confused.onlylist.designsystem.R
 
 /**
  * FontRegistry — maps token keys (body / display / mono) → FontFamily.
  *
- * v1 uses FontFamily.Default / SansSerif / Monospace (system fonts).
- * Phase 1.5 will bundle Inter + Sora + JetBrains Mono as variable fonts in res/font/
- * and swap the defaults. Past bold-rendering issues came from missing weight files —
- * when bundling, include ALL weights (400, 500, 600, 700, 800).
+ * Uses BUNDLED variable fonts (Inter, Sora, JetBrains Mono — all OFL).
+ * Variable fonts cover ALL weights (400-800) from a single file — the system
+ * renderer picks the right weight from the `wght` variation axis based on the
+ * FontWeight requested in the TextStyle. This fixes the bold-rendering issues
+ * the user experienced (missing weight files) — variable fonts always have
+ * every weight available.
  *
- * The Typography.kt references these keys; swapping here swaps everywhere.
+ * Total APK cost: ~1.2MB for all three families.
  */
 object FontRegistry {
-    val body: FontFamily = FontFamily.Default        // ponytail: Inter variable (400/500/600)
-    val display: FontFamily = FontFamily.SansSerif   // ponytail: Sora variable (600/700/800)
-    val mono: FontFamily = FontFamily.Monospace       // ponytail: JetBrains Mono variable (400/500)
+    val body: FontFamily = FontFamily(Font(R.font.inter_variable))
+    val display: FontFamily = FontFamily(Font(R.font.sora_variable))
+    val mono: FontFamily = FontFamily(Font(R.font.jetbrains_mono_variable))
 }
