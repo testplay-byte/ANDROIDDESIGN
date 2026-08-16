@@ -1,5 +1,6 @@
 package com.confused.onlylist.designsystem.theme
 
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -17,14 +18,14 @@ data class OnlyListMotion(
     val mediumMs: Int = 300,
     val longMs: Int = 450,
 
-    val standardEasing = FastOutSlowInEasing,                          // 0.4, 0.0, 0.2, 1.0
-    val standardDecelEasing = LinearOutSlowInEasing,                   // 0.0, 0.0, 0.2, 1.0
-    val standardAccelerateEasing = FastOutLinearInEasing,              // 0.4, 0.0, 1.0, 1.0
+    val standardEasing: Easing = FastOutSlowInEasing,             // 0.4, 0.0, 0.2, 1.0
+    val standardDecelEasing: Easing = LinearOutSlowInEasing,     // 0.0, 0.0, 0.2, 1.0
+    val standardAccelerateEasing: Easing = FastOutLinearInEasing, // 0.4, 0.0, 1.0, 1.0
 
-    val springDefault = Spring.DampingRatioMediumBouncy,               // ~0.5
-    val springDefaultStiffness = Spring.StiffnessMedium,               // ~1500
-    val springBouncy = Spring.DampingRatioLowBouncy,                    // ~0.75 (slight overshoot)
-    val springBouncyStiffness = 300f,
+    val springDefault: Float = Spring.DampingRatioMediumBouncy,   // ~0.5
+    val springDefaultStiffness: Float = Spring.StiffnessMedium,    // ~1500
+    val springBouncy: Float = Spring.DampingRatioLowBouncy,         // ~0.75 (slight overshoot)
+    val springBouncyStiffness: Float = 300f,
 )
 
 @Stable

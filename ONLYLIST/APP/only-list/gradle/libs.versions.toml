@@ -2,9 +2,9 @@
 agp = "8.7.2"
 kotlin = "2.0.21"
 
-# Compose
-composeBom = "2024.12.01"
-composeCompiler = "1.5.15"  # overridden by Kotlin 2.0+ compose plugin; kept for ref
+# Compose — explicit versions (belt-and-suspenders; BOM optional)
+composeBom = "2024.10.01"
+compose = "1.7.5"
 
 # AndroidX
 coreKtx = "1.15.0"
@@ -34,15 +34,19 @@ workmanager = "2.10.0"
 datastore = "1.1.1"
 
 [libraries]
-# Compose BOM
+# Compose BOM (optional — explicit versions below take precedence)
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-compose-ui = { group = "androidx.compose.ui", name = "ui" }
-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
-compose-animation = { group = "androidx.compose.animation", name = "animation" }
+
+# Compose — explicit versions so deps resolve even without BOM
+compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "compose" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose" }
+compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "compose" }
+compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "compose" }
+compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "compose" }
+compose-core = { group = "androidx.compose.ui", name = "ui", version.ref = "compose" }
 
 # AndroidX
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.runtime)
     implementation(libs.compose.animation)
+    implementation(libs.compose.animation.core)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.core.ktx)
