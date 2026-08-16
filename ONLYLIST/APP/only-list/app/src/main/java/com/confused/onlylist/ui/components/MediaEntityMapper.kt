@@ -12,7 +12,7 @@ import com.confused.onlylist.database.entity.MediaEntity
 fun MediaEntity.toUiModel(): MockMedia = MockMedia(
     id = id,
     title = titleRomaji ?: titleEnglish ?: titleNative ?: "Unknown",
-    titleEnglish = titleEnglish ?: title,
+    titleEnglish = titleEnglish ?: titleRomaji ?: titleNative ?: "Unknown",
     coverColor = parseCoverColor(coverImageColor),
     score = (averageScore ?: 0) / 10.0,
     episodes = episodes ?: 0,

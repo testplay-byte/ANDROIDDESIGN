@@ -24,8 +24,9 @@ android {
 }
 
 dependencies {
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
+    // Use 'api' so RoomDatabase is exposed to modules depending on :core:database
+    api(libs.room.runtime)
+    api(libs.room.ktx)
     ksp(libs.room.compiler)
 
     implementation(libs.coroutines.core)
