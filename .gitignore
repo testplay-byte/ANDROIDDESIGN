@@ -85,3 +85,4 @@ REFERENCES/cline/
 
 # --- Agent sandbox workspace (this lives outside the repo, but guard anyway) ---
 android-project/
+AGENT-TECH/references/
