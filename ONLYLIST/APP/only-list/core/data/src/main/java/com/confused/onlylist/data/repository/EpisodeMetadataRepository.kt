@@ -39,12 +39,9 @@ class EpisodeMetadataRepository(
             try {
                 Logger.d("EpisodeRepo", "Refreshing episodes for media $anilistId (malId=$malId, eps=$episodeCount)")
 
-                // Fetch from both sources in parallel
-                val (kitsuEpisodes, jikanEpisodes) = kotlinx.coroutines.coroutineScope {
-                    val kitsuDeferred = kotlinx.coroutines.async { fetchKitsuEpisodes(anilistId) }
-                    val jikanDeferred = kotlinx.coroutines.async { fetchJikanEpisodes(malId) }
-                    Pair(kitsuDeferred.await(), jikanDeferred.await())
-                }
+                // Fetch from both sources (sequential — simpler than async for v1)
+                val kitsuEpisodes = fetchKitsuEpisodes(anilistId)
+                val jikanEpisodes = fetchJikanEpisodes(malId)
 
                 // Merge per episode number
                 val mergedEpisodes = mutableMapOf<Int, EpisodeEntity>()
