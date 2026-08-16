@@ -18,22 +18,15 @@ import com.confused.onlylist.ui.screens.airing.AiringScreen
 import com.confused.onlylist.ui.screens.details.DetailsScreen
 import com.confused.onlylist.ui.screens.home.HomeScreen
 import com.confused.onlylist.ui.screens.library.LibraryScreen
+import com.confused.onlylist.ui.screens.profile.ProfileScreen
 import com.confused.onlylist.ui.screens.search.SearchScreen
 import com.confused.onlylist.ui.screens.settings.SettingsScreen
 import dev.chrisbanes.haze.HazeState
 
 /**
  * Single shared HazeState for the whole app.
- *
- * R-11 FIX: The previous design had each screen create its OWN HazeState for
- * its LazyColumn + CollapsibleHeader, and a SEPARATE bottomBarHazeState in
- * AppNavHost for the bottom bar. But no composable was marked as the SOURCE
- * for bottomBarHazeState — so Haze had nothing to sample → no blur, just tint.
- *
- * The fix: ONE shared HazeState. Each screen marks its LazyColumn with
- * Modifier.haze(sharedHazeState) (the blur source). The bottom bar + header
- * consume via hazeChild(sharedHazeState). Haze samples whichever composable
- * is currently visible behind the bar/header.
+ * Each screen marks its LazyColumn with Modifier.haze(sharedHazeState) (the blur source).
+ * The bottom bar + header consume via hazeChild(sharedHazeState).
  */
 @Composable
 fun AppNavHost() {
@@ -66,7 +59,13 @@ fun AppNavHost() {
                 )
             }
             composable(Destinations.SETTINGS) {
-                SettingsScreen(hazeState = sharedHazeState)
+                SettingsScreen(
+                    hazeState = sharedHazeState,
+                    onNavigateToProfile = { navController.navigate(Destinations.PROFILE) },
+                )
+            }
+            composable(Destinations.PROFILE) {
+                ProfileScreen(hazeState = sharedHazeState)
             }
             composable(
                 route = Destinations.DETAILS,
@@ -83,8 +82,6 @@ fun AppNavHost() {
         }
 
         // Floating pill bottom nav overlays the content.
-        // Uses the SAME sharedHazeState as the screens — so it blurs whatever
-        // LazyColumn is currently visible behind it.
         if (currentRoute in Destinations.bottomNavRoutes) {
             OnlyListBottomBar(
                 currentRoute = currentRoute ?: Destinations.HOME,

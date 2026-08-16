@@ -29,7 +29,10 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 
 @Composable
-fun SettingsScreen(hazeState: HazeState) {
+fun SettingsScreen(
+    hazeState: HazeState,
+    onNavigateToProfile: () -> Unit = {},
+) {
     val listState = rememberLazyListState()
     val colors = LocalColors.current
     val typography = LocalTypography.current
@@ -86,8 +89,9 @@ fun SettingsScreen(hazeState: HazeState) {
                                 Modifier
                                     .fillMaxWidth()
                                     .pressScale {
-                                        if (item.key == "account" && !isLoggedIn) {
-                                            MainActivity.startAniListAuth(context)
+                                        when (item.key) {
+                                            "account" -> if (!isLoggedIn) MainActivity.startAniListAuth(context)
+                                            "profile" -> onNavigateToProfile()
                                         }
                                     }
                                     .padding(vertical = 8.dp),

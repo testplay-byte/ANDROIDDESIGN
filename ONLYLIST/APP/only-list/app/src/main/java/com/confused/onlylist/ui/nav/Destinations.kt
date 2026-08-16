@@ -11,6 +11,7 @@ object Destinations {
     const val AIRING = "airing"
     const val LIBRARY = "library"
     const val SETTINGS = "settings"
+    const val PROFILE = "profile"
     const val DETAILS = "details/{mediaId}"
 
     fun details(mediaId: Int): String = "details/$mediaId"
