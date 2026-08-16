@@ -195,7 +195,7 @@ fun UsageScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 BasicText(
                                     text = "${log.inputTokens + log.outputTokens} tok",
-                                    style = typography.numberMedium.copy(color = colors.textSecondary),
+                                    style = typography.codeInline.copy(color = colors.textSecondary),
                                 )
                                 val cost = log.costMicros / 1_000_000.0
                                 if (cost > 0) {

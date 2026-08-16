@@ -107,13 +107,17 @@ fun OnboardingScreen(
             Spacer(Modifier.height(8.dp))
             BasicText(
                 text = "Welcome to Agent Tech",
-                style = typography.displayMedium.copy(color = colors.textPrimary),
-                textAlign = TextAlign.Center,
+                style = typography.displayMedium.copy(
+                    color = colors.textPrimary,
+                    textAlign = TextAlign.Center,
+                ),
             )
             BasicText(
                 text = "A dedicated Android AI agent that operates inside a project folder you choose.",
-                style = typography.bodyMedium.copy(color = colors.textSecondary),
-                textAlign = TextAlign.Center,
+                style = typography.bodyMedium.copy(
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                ),
             )
             Spacer(Modifier.height(16.dp))
             Box(
